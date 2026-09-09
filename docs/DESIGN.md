@@ -31,6 +31,17 @@ RiskLevel: `safe` (green — regenerated automatically, zero loss) ·
 Every category carries two plain-language strings: `detail` ("what this is") and
 `consequence` ("what happens if you clean it"). No jargon.
 
+A category also declares **how** its items leave: `removal: .trash` (the default
+— recoverable) or `.external`, meaning another tool owns the data and removal is
+permanent. Only Docker is `.external`. Two consequences fall out of that flag,
+both enforced by tests: such items are never pre-selected even at `safe` risk,
+and the commit button reads *Clean X* rather than *Move X to Trash* whenever one
+is selected.
+
+Items also carry `lastAccessed`, and the UI shows an "unused N months" badge
+past three months. The access date is the useful one: a cache is written once and
+read for years, so a recent read means it's live regardless of its age.
+
 | id | risk | paths (expand ~) |
 |----|------|------------------|
 | trash | safe | ~/.Trash |
@@ -44,7 +55,14 @@ Every category carries two plain-language strings: `detail` ("what this is") and
 | brew-cache | safe | ~/Library/Caches/Homebrew |
 | cocoapods-cache | safe | ~/Library/Caches/CocoaPods |
 | gradle-cache | review | ~/.gradle/caches, ~/.m2/repository |
-| docker-data | risky | ~/Library/Containers/com.docker.docker/Data/vms |
+| docker-build-cache | safe · **external** | `docker system df -v` → BuildCache not in use (one aggregate item; `docker builder prune`) |
+| docker-dangling-images | safe · **external** | untagged images with no container |
+| docker-stopped-containers | review · **external** | containers whose status is Exited/Created/Dead |
+| docker-unused-images | review · **external** | tagged images with no container (sized by UniqueSize — what deleting really frees) |
+| docker-unused-volumes | risky · **external** | volumes with `Links == 0`; labelled `project / volume` from Compose labels |
+| docker-data | risky | ~/Library/Containers/com.docker.docker/Data/vms — **only when the daemon is unreachable**, otherwise the five categories above cover the same bytes |
+| ai-models | review | ~/.ollama/models (whole), ~/.cache/huggingface/hub, ~/.lmstudio/models, ~/.cache/lm-studio/models, ~/.cache/torch, ~/.cache/whisper |
+| orphaned-app-data | review | bundle-id-shaped folders in ~/Library/{Application Support, Caches, Containers, Saved Application State, HTTPStorages, WebKit} with no installed or running app — excludes `com.apple.*`, helpers of live apps, updaters, and anything under 1 MB |
 | adobe-media-cache | review | ~/Library/Application Support/Adobe/Common/Media Cache Files, .../Media Cache |
 | font-caches | safe | ~/Library/Application Support/Adobe/CoreSync? no — use ~/Library/Caches/com.apple.FontRegistry |
 | sketch-cache | safe | ~/Library/Caches/com.bohemiancoding.sketch3, ~/Library/Caches/com.figma.Desktop |

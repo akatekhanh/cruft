@@ -70,11 +70,25 @@ public struct ScanItem: Identifiable, Hashable, Sendable {
     /// Per-item risk; defaults to the category's risk but a scanner may raise it.
     public let risk: RiskLevel
     public let lastModified: Date?
+    /// When the item was last *read*, which is what says "nothing has needed
+    /// this in months" — a stronger signal than its modification date, since a
+    /// cache is written once and read for years.
+    public let lastAccessed: Date?
 
     public init(url: URL, displayName: String, sizeBytes: Int64, categoryID: String,
-                risk: RiskLevel, lastModified: Date? = nil) {
+                risk: RiskLevel, lastModified: Date? = nil, lastAccessed: Date? = nil) {
         self.url = url; self.displayName = displayName; self.sizeBytes = sizeBytes
         self.categoryID = categoryID; self.risk = risk; self.lastModified = lastModified
+        self.lastAccessed = lastAccessed
+    }
+
+    /// Whole months since the item was last read or written, when known.
+    /// Nil when the filesystem reports neither date.
+    public var monthsSinceLastUse: Int? {
+        let dates = [lastAccessed, lastModified].compactMap { $0 }
+        guard let latest = dates.max() else { return nil }
+        let days = Calendar.current.dateComponents([.day], from: latest, to: Date()).day ?? 0
+        return max(0, days / 30)
     }
 }
 

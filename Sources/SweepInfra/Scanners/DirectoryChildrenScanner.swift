@@ -45,7 +45,8 @@ public struct DirectoryChildrenScanner: CategoryScanner, Sendable {
                         sizeBytes: size,
                         categoryID: category.id,
                         risk: category.risk,
-                        lastModified: FSHelpers.lastModified(of: child)
+                        lastModified: FSHelpers.lastModified(of: child),
+                        lastAccessed: FSHelpers.lastAccessed(of: child)
                     ))
                 }
             }

@@ -33,6 +33,9 @@ anything you didn't click.
   real re-download or rebuild cost) · Risky (your actual data — opt in per item).
 - **One button, not a hundred checkboxes.** *Quick clean* cleans every Safe,
   recoverable item it found. It's the only bulk control; there is no "select all".
+- **It tells you what's gone stale.** Items nothing has read in months carry an
+  "unused 8 months" badge, taken from the filesystem's access date — a cache
+  read yesterday is in use no matter how old it looks.
 - **Recoverable by design.** Cleaning is `FileManager.trashItem`. If you regret
   it, open the Trash.
 - **No dark patterns.** No urgency copy, no red totals, no health score, no
@@ -56,6 +59,7 @@ Marketing · Everyday use.
 | **Docker** | build cache, dangling images, stopped containers, unused images, unused volumes — scanned through `docker system df` |
 | **Local AI** | Ollama, LM Studio, Hugging Face, PyTorch, Whisper model stores |
 | **Creative** | Adobe media cache, Final Cut render files, Sketch/Figma caches, font caches |
+| **Leftovers** | settings and caches of apps you already deleted, found by matching bundle ids against what's installed |
 | **Everyday** | browser caches, Zoom/Teams caches, old downloads, screenshots, screen recordings, Mail attachment cache, Trash |
 | **Risky, opt-in** | large files in your folders, iPhone/iPad backups |
 

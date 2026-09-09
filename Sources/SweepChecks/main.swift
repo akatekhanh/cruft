@@ -240,6 +240,28 @@ expect(buckets["docker-stopped-containers"]?.count == 1
        "only the exited container")
 expect(buckets["docker-unused-volumes"]?.map(\.displayName) == ["orphan-vol"],
        "only the unlinked volume")
+
+// Volume naming: a hash tells the user nothing, so compose labels are used.
+expect(DockerUsageParser.volumeLabel(
+        name: "data-platform-core_spark_ivy",
+        labels: "com.docker.compose.project=data-platform-core,com.docker.compose.volume=spark_ivy")
+       == "data-platform-core / spark_ivy",
+       "compose labels give a human-readable volume name")
+let hashName = String(repeating: "a", count: 64)
+expect(DockerUsageParser.volumeLabel(name: hashName, labels: "")
+       == "Unnamed volume (aaaaaaaaaaaa…)",
+       "anonymous volume is labelled and abbreviated")
+expect(DockerUsageParser.volumeLabel(name: hashName,
+                                     labels: "com.docker.compose.project=proj")
+       == "proj / unnamed volume (aaaaaaaaaaaa…)",
+       "anonymous volume still shows its project when known")
+expect(DockerUsageParser.volumeLabel(name: "pgdata", labels: "") == "pgdata",
+       "a plain named volume is left alone")
+expect(DockerUsageParser.isAnonymousName("pgdata") == false, "named volume is not anonymous")
+expect(DockerUsageParser.isAnonymousName(hashName), "64-hex name is anonymous")
+expect(DockerUsageParser.parseLabels("a=1,b=2")["b"] == "2", "labels parse")
+expect(DockerUsageParser.parseLabels("")["x"] == nil, "empty labels are harmless")
+expect(DockerUsageParser.parseLabels("weird")["weird"] == nil, "a pair without = is skipped")
 expect(buckets["docker-build-cache"]?.first?.sizeBytes == 300_000_000,
        "build cache sums only not-in-use entries")
 expect(buckets["docker-unused-volumes"]?.first?.risk == .risky, "volumes stay risky")
@@ -281,6 +303,103 @@ let quickDefault = SelectionPolicy.defaultSelection(in: quickResults)
 expect(quickDefault == ["/log1"], "default selection excludes permanent removals")
 expect(SelectionPolicy.selectedBytes(in: quickResults, selection: quickDefault) == 100,
        "headline selected bytes excludes docker bytes")
+
+// ── Orphaned app data: the false-positive rules ─────────────────────
+section("OrphanedAppDataScanner")
+let fakeIndex = InstalledAppsIndex(bundleIDs: ["com.acme.editor", "com.figma.desktop"])
+func orphan(_ name: String) -> String? {
+    OrphanedAppDataScanner.orphanedBundleID(forFolderName: name, index: fakeIndex)
+}
+expect(orphan("com.deadapp.thing") == "com.deadapp.thing", "leftover of a missing app is reported")
+expect(orphan("com.acme.editor") == nil, "installed app is never reported")
+expect(orphan("com.acme.editor.helper") == nil,
+       "helper of an installed app survives (prefix match)")
+expect(orphan("com.apple.Safari") == nil, "Apple ids are never touched")
+expect(orphan("com.apple.dt.Xcode.something") == nil, "nested Apple ids either")
+expect(orphan("Firefox") == nil, "plain folder names are not bundle ids")
+expect(orphan("Google") == nil, "one-word vendor folders are not candidates")
+expect(orphan("com.google") == nil, "two-label names are too generic to act on")
+expect(orphan("My Cool App.stuff.here") == nil, "names with spaces are not bundle ids")
+expect(orphan("com.deadapp.thing.savedState") == "com.deadapp.thing",
+       "savedState suffix is stripped before matching")
+expect(orphan("com.deadapp.thing.plist") == "com.deadapp.thing",
+       "plist suffix is stripped before matching")
+expect(orphan("com.microsoft.autoupdate.helper") == nil,
+       "known non-app owners are excluded")
+expect(orphan("com.google.keystone.agent") == nil, "updaters are excluded")
+expect(OrphanedAppDataScanner.bundleID(fromFolderName: "com.a.b") == "com.a.b",
+       "three-label name parses")
+
+// The real index must at least know the apps that are running right now —
+// otherwise every running app's data would look orphaned.
+let realIndex = InstalledAppsIndex.current()
+expect(!realIndex.bundleIDs.isEmpty, "installed-apps index is not empty")
+expect(realIndex.isInstalled("com.apple.finder"), "Finder is seen as installed")
+
+// End-to-end against a real directory tree: the rules above are only useful
+// if the scanner actually finds the leftover and leaves the live app alone.
+do {
+    let d = try tempDir(); defer { try? FileManager.default.removeItem(at: d) }
+    for folder in ["com.deadapp.gone", "com.acme.editor", "com.apple.Something", "PlainFolder"] {
+        let sub = d.appendingPathComponent(folder)
+        try FileManager.default.createDirectory(at: sub, withIntermediateDirectories: true)
+        try write(sub, "blob.bin", bytes: 2_000_000)
+    }
+    // Below the floor: a tiny leftover is not worth asking about.
+    let small = d.appendingPathComponent("com.deadapp.tiny")
+    try FileManager.default.createDirectory(at: small, withIntermediateDirectories: true)
+    try write(small, "x.bin", bytes: 1_000)
+
+    let found = await OrphanedAppDataScanner(
+        category: cat("orphaned-app-data", .review),
+        roots: [d.path], minBytes: 1_000_000, index: fakeIndex
+    ).scan()
+    expect(found.map(\.displayName) == ["com.deadapp.gone"],
+           "finds only the leftover of the uninstalled app, got \(found.map(\.displayName))")
+    expect(found.first?.sizeBytes ?? 0 >= 2_000_000, "reports the real size")
+} catch { expect(false, "OrphanedAppDataScanner live-tree setup: \(error)") }
+
+// ── Idle age (last used) ────────────────────────────────────────────
+section("monthsSinceLastUse")
+func aged(_ days: Int) -> ScanItem {
+    ScanItem(url: URL(fileURLWithPath: "/tmp/x"), displayName: "x", sizeBytes: 1,
+             categoryID: "a", risk: .safe,
+             lastModified: Date(timeIntervalSinceNow: -Double(days) * 86400),
+             lastAccessed: nil)
+}
+expect(aged(0).monthsSinceLastUse == 0, "fresh item = 0 months")
+expect(aged(95).monthsSinceLastUse == 3, "95 days ≈ 3 months")
+expect(aged(400).monthsSinceLastUse == 13, "400 days ≈ 13 months")
+expect(ScanItem(url: URL(fileURLWithPath: "/tmp/y"), displayName: "y", sizeBytes: 1,
+                categoryID: "a", risk: .safe).monthsSinceLastUse == nil,
+       "no dates → unknown, not zero")
+// Access date wins when it is newer than the modification date: a cache
+// written long ago but read yesterday is in active use.
+let readRecently = ScanItem(url: URL(fileURLWithPath: "/tmp/z"), displayName: "z",
+                            sizeBytes: 1, categoryID: "a", risk: .safe,
+                            lastModified: Date(timeIntervalSinceNow: -400 * 86400),
+                            lastAccessed: Date())
+expect(readRecently.monthsSinceLastUse == 0, "recent read beats an old write")
+
+// ── Live scan (opt-in) ──────────────────────────────────────────────
+// `SWEEP_LIVE=1 swift run SweepChecks` scans this machine for real and prints
+// what each category found. Not part of the pass/fail suite — it touches the
+// user's disk and its output depends on the machine — but it is the only way
+// to judge a scanner's false-positive rate before shipping it.
+if ProcessInfo.processInfo.environment["SWEEP_LIVE"] != nil {
+    section("LIVE scan of this machine")
+    let all = SweepInfraFactory.makeAllScanners()
+    for scanner in all {
+        let items = await scanner.scan()
+        guard !items.isEmpty else { continue }
+        let total = items.reduce(Int64(0)) { $0 + $1.sizeBytes }
+        print("  \(scanner.category.name) — \(ByteText.string(total)) in \(items.count) items")
+        for item in items.sorted(by: { $0.sizeBytes > $1.sizeBytes }).prefix(8) {
+            let idle = item.monthsSinceLastUse.map { " (idle \($0)m)" } ?? ""
+            print("      \(ByteText.string(item.sizeBytes))\t\(item.displayName)\(idle)")
+        }
+    }
+}
 
 // ── Summary ─────────────────────────────────────────────────────────
 print("\n\(passed) passed, \(failed) failed")

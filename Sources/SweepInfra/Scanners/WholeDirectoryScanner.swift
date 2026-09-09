@@ -30,7 +30,8 @@ public struct WholeDirectoryScanner: CategoryScanner, Sendable {
                     sizeBytes: size,
                     categoryID: category.id,
                     risk: category.risk,
-                    lastModified: FSHelpers.lastModified(of: url)
+                    lastModified: FSHelpers.lastModified(of: url),
+                    lastAccessed: FSHelpers.lastAccessed(of: url)
                 ))
             }
             return items

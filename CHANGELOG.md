@@ -6,6 +6,21 @@ Per-release details are also generated from merged pull requests on the
 
 ## [Unreleased]
 
+### Added
+- **Leftovers from deleted apps**: finds `~/Library` data belonging to apps that
+  are no longer installed, by matching bundle-identifier-shaped folder names
+  against installed *and* running apps. Deliberately conservative — Apple ids,
+  helpers of live apps, updaters (Keystone, GoogleUpdater, Sparkle, Edge) and
+  anything under 1 MB are never reported.
+- **"Unused N months" badge** on items nothing has read in a while, from the
+  filesystem access date. A recent read beats an old write, so a long-lived
+  cache still in use is not flagged.
+- **Docker volumes now show their Compose project** (`myproject / pgdata`)
+  instead of a 64-character hash; anonymous volumes say so and are abbreviated.
+- `SWEEP_LIVE=1 swift run SweepChecks` prints a real scan of the current
+  machine — the only way to judge a scanner's false-positive rate before
+  shipping it. (It caught GoogleUpdater being mislabelled as a leftover.)
+
 ## [0.1.0] — 2026-09-09
 
 First public release.

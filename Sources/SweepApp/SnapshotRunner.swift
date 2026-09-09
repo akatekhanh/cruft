@@ -105,13 +105,15 @@ enum SnapshotRunner {
     }
 
     private static func fakeResults() -> [CategoryScanResult] {
+        /// `idleDays` drives the "unused N months" badge, so snapshots show it.
         func fake(_ catID: String, _ entries: [(String, Int64)],
-                  risk: RiskLevel? = nil) -> CategoryScanResult? {
+                  risk: RiskLevel? = nil, idleDays: Int = 0) -> CategoryScanResult? {
             guard let c = Catalog.category(catID) else { return nil }
+            let date = Date(timeIntervalSinceNow: -Double(idleDays) * 86400)
             let items = entries.map { (name, size) in
                 ScanItem(url: URL(fileURLWithPath: "/tmp/fake/\(name)"), displayName: name,
                          sizeBytes: size, categoryID: c.id, risk: risk ?? c.risk,
-                         lastModified: Date())
+                         lastModified: date, lastAccessed: date)
             }
             return CategoryScanResult(category: c, items: items)
         }
@@ -124,7 +126,9 @@ enum SnapshotRunner {
                                  ("com.apple.dt.Xcode", 640_000_000)]),
             fake("docker-unused-volumes", [("pgdata", 1_200_000_000),
                                            ("minio_data", 950_000_000)]),
-            fake("ai-models", [("Ollama models (all of them)", 12_800_000_000)]),
+            fake("ai-models", [("Ollama models (all of them)", 12_800_000_000)], idleDays: 200),
+            fake("orphaned-app-data", [("com.oldvendor.tool", 840_000_000),
+                                       ("com.deadapp.editor", 210_000_000)], idleDays: 500),
             fake("old-downloads", [("installer-2025.dmg", 3_100_000_000),
                                    ("report-final-v2.pdf", 18_000_000)]),
             fake("large-files", [("footage-raw.mov", 8_900_000_000)]),

@@ -92,6 +92,9 @@ public enum SweepInfraFactory {
         case "docker-data":
             return DockerDiskFallbackScanner(category: category, inventory: dockerInventory)
 
+        case "orphaned-app-data":
+            return OrphanedAppDataScanner(category: category)
+
         case "ai-models":
             return CompositeScanner(category: category, scanners: [
                 // Ollama's blob store is content-addressed — models share blobs,

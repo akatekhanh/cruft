@@ -29,6 +29,21 @@ enum FSHelpers {
         try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
     }
 
+    /// Last read. macOS keeps this per-file, and a directory's own access date
+    /// says little about its contents, so for a directory we take the newest
+    /// access date among its immediate children instead.
+    static func lastAccessed(of url: URL) -> Date? {
+        func accessDate(_ u: URL) -> Date? {
+            try? u.resourceValues(forKeys: [.contentAccessDateKey]).contentAccessDate
+        }
+        guard isDirectory(url) else { return accessDate(url) }
+        let children = (try? FileManager.default.contentsOfDirectory(
+            at: url, includingPropertiesForKeys: [.contentAccessDateKey], options: []
+        )) ?? []
+        let dates = children.compactMap(accessDate) + [accessDate(url)].compactMap { $0 }
+        return dates.max()
+    }
+
     static func isRegularFile(_ url: URL) -> Bool {
         (try? url.resourceValues(forKeys: [.isRegularFileKey]))?.isRegularFile ?? false
     }

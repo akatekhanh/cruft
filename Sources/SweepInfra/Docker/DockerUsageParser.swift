@@ -106,7 +106,8 @@ public enum DockerUsageParser {
             let name = str(volume["Name"])
             guard !name.isEmpty else { continue }
             append(&out, unusedVolumesCategoryID, item(
-                kind: "volume", ref: name, name: name,
+                kind: "volume", ref: name,
+                name: volumeLabel(name: name, labels: str(volume["Labels"])),
                 size: parseSize(str(volume["Size"])),
                 categoryID: unusedVolumesCategoryID))
         }
@@ -122,6 +123,45 @@ public enum DockerUsageParser {
         }
 
         return out
+    }
+
+    /// A volume name a person can act on. Compose stamps the project and the
+    /// declared volume name into labels, which is the difference between
+    /// "data-platform-core / spark_ivy" and a 64-character hash the user has no
+    /// way to judge. Anonymous volumes (a bare hash, no labels) are labelled as
+    /// such and abbreviated, because their full name carries no information.
+    public static func volumeLabel(name: String, labels raw: String) -> String {
+        let labels = parseLabels(raw)
+        let project = labels["com.docker.compose.project"]
+        let declared = labels["com.docker.compose.volume"]
+        if let project, let declared {
+            return "\(project) / \(declared)"
+        }
+        if isAnonymousName(name) {
+            let short = String(name.prefix(12))
+            if let project {
+                return "\(project) / unnamed volume (\(short)…)"
+            }
+            return "Unnamed volume (\(short)…)"
+        }
+        return name
+    }
+
+    /// `docker system df -v` renders labels as one `k=v,k=v` string.
+    public static func parseLabels(_ raw: String) -> [String: String] {
+        var out: [String: String] = [:]
+        for pair in raw.split(separator: ",") {
+            guard let eq = pair.firstIndex(of: "=") else { continue }
+            let key = String(pair[pair.startIndex..<eq]).trimmingCharacters(in: .whitespaces)
+            let value = String(pair[pair.index(after: eq)...])
+            if !key.isEmpty { out[key] = value }
+        }
+        return out
+    }
+
+    /// Docker names an anonymous volume with a 64-character hex digest.
+    public static func isAnonymousName(_ name: String) -> Bool {
+        name.count == 64 && name.allSatisfy { $0.isHexDigit }
     }
 
     /// `docker://local/<kind>/<ref>` — see type comment.

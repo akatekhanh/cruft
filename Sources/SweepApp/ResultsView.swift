@@ -138,6 +138,15 @@ private struct ItemRow: View {
 
     private var isSelected: Bool { model.selection.contains(item.id) }
 
+    /// Shown only once an item has been untouched long enough for that to be
+    /// information rather than noise — a cache written yesterday says nothing.
+    private var idleLabel: String? {
+        guard let months = item.monthsSinceLastUse, months >= 3 else { return nil }
+        if months >= 24 { return "unused \(months / 12) years" }
+        if months >= 12 { return "unused a year+" }
+        return "unused \(months) months"
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             Button {
@@ -156,9 +165,19 @@ private struct ItemRow: View {
             }
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(item.displayName)
-                    .font(.headline)
-                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(item.displayName)
+                        .font(.headline)
+                        .lineLimit(1)
+                    if let idle = idleLabel {
+                        Text(idle)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 1)
+                            .background(Capsule().fill(.quaternary))
+                    }
+                }
                 if let category {
                     Text(category.consequence)
                         .font(.caption)

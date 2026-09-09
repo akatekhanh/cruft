@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-check:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Build
+        run: swift build -v
+
+      # SweepChecks is the same suite as `swift test` but needs no XCTest
+      # runtime, so it is the gate: it runs anywhere the toolchain does.
+      - name: Checks
+        run: swift run SweepChecks
+
+      - name: Tests (Swift Testing)
+        run: swift test -v
+
+      # Proves the shipped artifact still assembles: bundle layout, Info.plist,
+      # icon, ad-hoc signature.
+      - name: Package app bundle
+        run: ./scripts/make-app.sh
+
+      - name: Verify bundle
+        run: |
+          test -x dist/Sweep.app/Contents/MacOS/Sweep
+          test -f dist/Sweep.app/Contents/Resources/Sweep.icns
+          plutil -lint dist/Sweep.app/Contents/Info.plist
+          codesign --verify --verbose dist/Sweep.app

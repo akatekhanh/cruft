@@ -1,0 +1,10 @@
+version: 2
+updates:
+  # The Swift package has no external dependencies, so Actions is the only
+  # supply chain here worth watching.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "ci"

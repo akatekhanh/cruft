@@ -1,0 +1,13 @@
+.build/
+dist/
+.DS_Store
+*.xcuserstate
+.swiftpm/
+
+# Editor state (the Swift extension writes machine-specific paths in here)
+.vscode/
+
+# The cross-platform (Tauri) port lives here but is not part of the public
+# macOS repo. Kept out of git deliberately, not deleted.
+desktop/
+docs/CROSS-PLATFORM.md

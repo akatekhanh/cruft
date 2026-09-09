@@ -1,0 +1,65 @@
+name: Suggest something to clean
+description: A cache, build directory, or leftover Sweep should know about
+labels: ["category"]
+body:
+  - type: input
+    id: what
+    attributes:
+      label: What is it
+      placeholder: "Bun's install cache"
+    validations:
+      required: true
+
+  - type: input
+    id: path
+    attributes:
+      label: Where does it live
+      description: The path, with `~` for your home folder.
+      placeholder: "~/.bun/install/cache"
+    validations:
+      required: true
+
+  - type: textarea
+    id: consequence
+    attributes:
+      label: What happens after it is cleaned
+      description: >
+        In plain language, for someone who is not a developer. This becomes the
+        text shown next to every item, so be honest about the cost.
+      placeholder: "The next install re-downloads packages from the internet."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk level
+      description: >
+        Safe = regenerates itself, nothing lost · Worth a look = safe but has a
+        real cost (re-download, rebuild, re-login) · Risky = actual user data.
+      options:
+        - Safe
+        - Worth a look
+        - Risky
+    validations:
+      required: true
+
+  - type: input
+    id: size
+    attributes:
+      label: How big is it on your machine
+      description: "`du -sh <path>` — helps judge whether it's worth a category."
+      placeholder: "3.2G"
+
+  - type: dropdown
+    id: roles
+    attributes:
+      label: Which roles should see it
+      multiple: true
+      options:
+        - Developer
+        - Designer / Artist
+        - Video creator
+        - Office work
+        - Marketing
+        - Everyday use

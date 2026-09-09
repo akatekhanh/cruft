@@ -1,0 +1,79 @@
+name: Bug report
+description: Something behaved differently from what the UI promised
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **If files were deleted that you did not expect, check the Trash first** —
+        Sweep only ever moves files there (Docker objects are the documented
+        exception). Restoring from the Trash is usually the fastest fix.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did Sweep do, and what did you expect instead?
+      placeholder: |
+        I selected … and clicked … . I expected … but …
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the … tab
+        2. Scan
+        3. …
+    validations:
+      required: true
+
+  - type: input
+    id: category
+    attributes:
+      label: Which category or item
+      description: The category name shown in the sidebar, and the item name if relevant.
+      placeholder: "Docker unused volumes — pgdata"
+
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "15.5 (24F74)"
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Sweep version
+      description: From the release you downloaded, or the commit you built.
+      placeholder: "v0.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mac
+    attributes:
+      label: Mac
+      options:
+        - Apple silicon
+        - Intel
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: permissions
+    attributes:
+      label: Permissions
+      options:
+        - label: Sweep has Full Disk Access (System Settings → Privacy & Security)
+        - label: Docker was running when I scanned
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Screenshots help a lot for layout or copy problems.

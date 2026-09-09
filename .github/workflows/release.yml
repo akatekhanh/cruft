@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build (e.g. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checks
+        run: swift run SweepChecks
+
+      - name: Build release bundle
+        run: ./scripts/make-app.sh
+
+      # Zip from inside dist/ so the archive contains Sweep.app at its root,
+      # and use ditto to preserve the bundle's resource forks and signature.
+      - name: Archive
+        run: |
+          cd dist
+          ditto -c -k --sequesterRsrc --keepParent Sweep.app Sweep-macOS.zip
+          shasum -a 256 Sweep-macOS.zip > Sweep-macOS.zip.sha256
+          cat Sweep-macOS.zip.sha256
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          files: |
+            dist/Sweep-macOS.zip
+            dist/Sweep-macOS.zip.sha256
+          body: |
+            ## Install
+
+            Download `Sweep-macOS.zip`, unzip, and move `Sweep.app` to
+            `/Applications`.
+
+            **This build is unsigned**, so macOS will refuse the first launch.
+            Right-click (or Control-click) the app → **Open** → **Open**. You
+            only have to do this once. See the README for why, and for the
+            `xattr` alternative.
+
+            Some categories (Safari cache, Mail attachments) need **Full Disk
+            Access** in System Settings → Privacy & Security. Without it they
+            simply show as empty.

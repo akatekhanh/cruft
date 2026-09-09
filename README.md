@@ -24,9 +24,28 @@ anything you didn't click.
 
 ## What makes it different
 
-- **Only Safe *and* recoverable items are pre-selected.** A Docker build cache
-  is "safe" — it rebuilds itself — but it never lands in the Trash, so Sweep
-  leaves it unticked. Nothing without an undo gets ticked for you.
+There are good open-source Mac cleaners now — several appeared in 2025–2026, and
+some of them already do risk tiers and trash-only deletion. Here is what Sweep
+does that they don't, stated narrowly enough to check:
+
+- **Docker, broken out into the five things you'd actually decide about
+  separately** — build cache, dangling images, stopped containers, unused
+  images, unused volumes — read from `docker system df`, each with its own risk
+  level. Other tools either offer one "Docker" row worth 20 GB, or run
+  `docker system prune -f` on your behalf. Volumes are labelled by their Compose
+  project (`myproject / pgdata`), not by a 64-character hash.
+- **Local AI model stores as a first-class category**, all five of them: Ollama,
+  LM Studio, Hugging Face, PyTorch, Whisper — the *model files*, not just their
+  logs. These are the caches that quietly reach tens of GB.
+- **Nothing without an undo is ever pre-selected.** A Docker build cache is
+  "safe" — it rebuilds itself — but it never lands in the Trash, so Sweep leaves
+  it unticked. Every removal that isn't recoverable says so in the row, and the
+  commit button changes wording as soon as one is selected.
+- **Role-based scanning inside a native app**, so a video editor is never asked
+  about DerivedData and a developer is never shown their Movies folder.
+
+And the things a careful cleaner should do anyway:
+
 - **Every item says what happens next.** Not "frees up space", but "Next build
   of each project takes longer, one time."
 - **Three honest risk levels.** Safe (regenerates itself) · Worth a look (has a

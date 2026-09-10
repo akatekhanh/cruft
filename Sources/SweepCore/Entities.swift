@@ -74,12 +74,18 @@ public struct ScanItem: Identifiable, Hashable, Sendable {
     /// this in months" — a stronger signal than its modification date, since a
     /// cache is written once and read for years.
     public let lastAccessed: Date?
+    /// Synced by iCloud Drive (or another File Provider). Deleting such an item
+    /// removes it from every device on the account, not just this Mac — so the
+    /// UI must say so, and a scanner must never treat it as a local-only file.
+    public let isCloudManaged: Bool
 
     public init(url: URL, displayName: String, sizeBytes: Int64, categoryID: String,
-                risk: RiskLevel, lastModified: Date? = nil, lastAccessed: Date? = nil) {
+                risk: RiskLevel, lastModified: Date? = nil, lastAccessed: Date? = nil,
+                isCloudManaged: Bool = false) {
         self.url = url; self.displayName = displayName; self.sizeBytes = sizeBytes
         self.categoryID = categoryID; self.risk = risk; self.lastModified = lastModified
         self.lastAccessed = lastAccessed
+        self.isCloudManaged = isCloudManaged
     }
 
     /// Whole months since the item was last read or written, when known.

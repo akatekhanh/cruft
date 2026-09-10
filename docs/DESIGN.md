@@ -42,6 +42,30 @@ Items also carry `lastAccessed`, and the UI shows an "unused N months" badge
 past three months. The access date is the useful one: a cache is written once and
 read for years, so a recent read means it's live regardless of its age.
 
+### iCloud
+
+`isCloudManaged` marks items iCloud syncs. This is a third axis alongside risk
+and removal method, because it changes the *scope* of a deletion rather than its
+severity: trashing a synced file removes it from every device on the account.
+Such items get a badge, get their own consequence line, and are excluded from
+quick clean and from the default selection.
+
+Detecting them is not what the documentation suggests. With "Desktop & Documents
+Folders" enabled, `~/Desktop` is a firmlink to the real iCloud location, and
+`isUbiquitousItemKey` / `ubiquitousItemDownloadingStatusKey` both report nil for
+that path — only `~/Library/Mobile Documents/com~apple~CloudDocs/Desktop`
+answers true (verified on macOS 26). Sweep therefore also treats
+`~/Desktop`/`~/Documents` as cloud-managed when the matching folder exists under
+`com~apple~CloudDocs`, which iCloud creates exactly when that sync is on.
+
+### A pattern to avoid
+
+At least one popular open-source cleaner deletes `History`, `Cookies` and
+`Web Data` from a browser profile under the heading of clearing its cache. That
+is browsing history and login state, not cache. Nothing in Sweep may point at a
+path like that: if cleaning it would log the user out or lose their history, it
+is not a cache, whatever folder it lives in.
+
 | id | risk | paths (expand ~) |
 |----|------|------------------|
 | trash | safe | ~/.Trash |

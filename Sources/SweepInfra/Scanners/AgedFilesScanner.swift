@@ -40,7 +40,8 @@ public struct AgedFilesScanner: CategoryScanner, Sendable {
                     sizeBytes: size,
                     categoryID: category.id,
                     risk: category.risk,
-                    lastModified: modified
+                    lastModified: modified,
+                    isCloudManaged: FSHelpers.isCloudManaged(child)
                 ))
             }
             return items

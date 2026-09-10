@@ -56,7 +56,8 @@ public struct LargeFilesScanner: CategoryScanner, Sendable {
                     sizeBytes: size,
                     categoryID: category.id,
                     risk: .risky,
-                    lastModified: FSHelpers.lastModified(of: child)
+                    lastModified: FSHelpers.lastModified(of: child),
+                    isCloudManaged: FSHelpers.isCloudManaged(child)
                 ))
             }
         }

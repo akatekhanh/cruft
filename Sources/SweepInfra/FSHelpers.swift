@@ -4,7 +4,7 @@ import SweepCore
 /// Shared, read-only filesystem helpers used by every scanner. Never mutates disk,
 /// never throws to callers, silently skips entries it cannot read (missing
 /// permissions, races, etc. — some paths require Full Disk Access).
-enum FSHelpers {
+public enum FSHelpers {
 
     /// Expands `~` and returns a file URL. Does not check existence.
     static func expandTilde(_ path: String) -> URL {
@@ -47,6 +47,52 @@ enum FSHelpers {
     static func isRegularFile(_ url: URL) -> Bool {
         (try? url.resourceValues(forKeys: [.isRegularFileKey]))?.isRegularFile ?? false
     }
+
+    /// True when the item is managed by iCloud Drive (or another File Provider).
+    ///
+    /// This changes what deletion *means*: trashing a synced file removes it
+    /// from every device signed into that account, not just this Mac. With
+    /// "Desktop & Documents Folders" enabled — which macOS offers during setup —
+    /// `~/Desktop` and `~/Documents` are entirely File-Provider territory, so
+    /// this is not an edge case. Reading these attributes is metadata-only and
+    /// never triggers a download of an evicted file.
+    public static func isCloudManaged(_ url: URL) -> Bool {
+        if let values = try? url.resourceValues(forKeys: [.isUbiquitousItemKey]),
+           values.isUbiquitousItem == true {
+            return true
+        }
+        // A file evicted to the cloud is "dataless": it occupies no local blocks
+        // and materialises on read. Those are cloud items too, even when the
+        // ubiquity flag is not reported for the path we were handed.
+        if let values = try? url.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey]),
+           values.ubiquitousItemDownloadingStatus != nil {
+            return true
+        }
+        // The path the user sees is not the path the ubiquity API recognises.
+        // With "Desktop & Documents Folders" on, ~/Desktop is a firmlink to the
+        // real iCloud location, and every ubiquity key above reports nil for it
+        // (verified on macOS 26) — only the ~/Library/Mobile Documents path
+        // answers true. So fall back to asking whether this path lives under a
+        // user folder that iCloud has taken over.
+        let path = url.path
+        return cloudManagedUserRoots.contains { path == $0 || path.hasPrefix($0 + "/") }
+    }
+
+    /// `~/Desktop` and/or `~/Documents`, but only the ones iCloud is currently
+    /// syncing. iCloud creates the matching folder under `com~apple~CloudDocs`
+    /// exactly when that sync is enabled, which makes its presence the reliable
+    /// signal. Computed once: this is consulted per scanned file.
+    private static let cloudManagedUserRoots: [String] = {
+        let fm = FileManager.default
+        let home = fm.homeDirectoryForCurrentUser
+        let cloudDocs = home.appendingPathComponent(
+            "Library/Mobile Documents/com~apple~CloudDocs")
+        return ["Desktop", "Documents"].compactMap { name in
+            fm.fileExists(atPath: cloudDocs.appendingPathComponent(name).path)
+                ? home.appendingPathComponent(name).path
+                : nil
+        }
+    }()
 
     static func isDirectory(_ url: URL) -> Bool {
         (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false

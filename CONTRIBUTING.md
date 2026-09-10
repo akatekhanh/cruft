@@ -32,6 +32,17 @@ be turned down however good the code is:
    fake progress, no "your Mac is at risk". If a design makes the user anxious
    to make them click, it's wrong.
 6. **Scanners never mutate the disk.** They read. Cleaning happens in one place.
+7. **A folder's name is not evidence of what's inside it.** Never add a path
+   because it contains "cache" or "tmp". `~/.gemini/tmp` holds real conversation
+   checkpoints; Slack's message store sits next to its cache folders; Raycast
+   keeps clipboard history inside its `Caches` bundle. Point at the exact
+   subfolder you have verified, and if you can't reach it without a glob the
+   scanners don't support, leave it out rather than approximate.
+8. **Respect iCloud.** A synced file deleted here disappears from the user's
+   other devices, so items under a File-Provider-managed folder are flagged in
+   the UI and excluded from quick clean. Note that the ubiquity APIs report
+   nothing for `~/Desktop` even when it *is* synced — see
+   `FSHelpers.isCloudManaged` for why and what to check instead.
 
 ## Adding a category
 

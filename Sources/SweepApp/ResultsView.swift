@@ -177,8 +177,23 @@ private struct ItemRow: View {
                             .padding(.vertical, 1)
                             .background(Capsule().fill(.quaternary))
                     }
+                    if item.isCloudManaged {
+                        Label("iCloud", systemImage: "icloud")
+                            .font(.caption2)
+                            .foregroundStyle(Theme.accent)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 1)
+                            .background(Capsule().fill(Theme.accent.opacity(0.12)))
+                    }
                 }
-                if let category {
+                if item.isCloudManaged {
+                    // The consequence text below describes local deletion; for a
+                    // synced file the real consequence is bigger, so say it here.
+                    Text("Synced by iCloud — removing it here removes it from your other devices too.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.color(for: .risky))
+                        .lineLimit(2)
+                } else if let category {
                     Text(category.consequence)
                         .font(.caption)
                         .foregroundStyle(.secondary)

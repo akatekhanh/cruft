@@ -49,8 +49,9 @@ public struct FCPRenderScanner: CategoryScanner, Sendable {
                         sizeBytes: size,
                         categoryID: category.id,
                         risk: category.risk,
-                        lastModified: FSHelpers.lastModified(of: child)
-                    ))
+                        lastModified: FSHelpers.lastModified(of: child),
+                    isCloudManaged: FSHelpers.isCloudManaged(child)
+                ))
                 }
                 continue
             }

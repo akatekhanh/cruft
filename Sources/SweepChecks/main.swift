@@ -304,6 +304,41 @@ expect(quickDefault == ["/log1"], "default selection excludes permanent removals
 expect(SelectionPolicy.selectedBytes(in: quickResults, selection: quickDefault) == 100,
        "headline selected bytes excludes docker bytes")
 
+// ── iCloud-synced items are never swept along ───────────────────────
+section("iCloud safety")
+let cloudItem = ScanItem(url: URL(fileURLWithPath: "/Users/x/Desktop/report.key"),
+                         displayName: "report.key", sizeBytes: 900, categoryID: "logs",
+                         risk: .safe, isCloudManaged: true)
+let localItem = ScanItem(url: URL(fileURLWithPath: "/Users/x/Library/Logs/app.log"),
+                         displayName: "app.log", sizeBytes: 100, categoryID: "logs",
+                         risk: .safe)
+let cloudResults = [CategoryScanResult(category: cat("logs", .safe),
+                                       items: [cloudItem, localItem])]
+expect(SelectionPolicy.quickCleanItems(in: cloudResults).map(\.displayName) == ["app.log"],
+       "quick clean skips iCloud items even at safe risk")
+expect(SelectionPolicy.defaultSelection(in: cloudResults) == ["/Users/x/Library/Logs/app.log"],
+       "default selection skips iCloud items too")
+// Selecting one by hand still works — this is a default, not a prohibition.
+expect(SelectionPolicy.selectedBytes(in: cloudResults,
+        selection: ["/Users/x/Desktop/report.key"]) == 900,
+       "a user can still choose an iCloud item deliberately")
+
+// Detection on this machine must agree with what iCloud itself reports. The
+// ubiquity keys return nil for ~/Desktop even when it is synced (the firmlink
+// problem), so the check below is the one that has to hold.
+let homeDir = FileManager.default.homeDirectoryForCurrentUser
+let cloudDocs = homeDir.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs")
+for folder in ["Desktop", "Documents"] {
+    let synced = FileManager.default.fileExists(
+        atPath: cloudDocs.appendingPathComponent(folder).path)
+    let probe = homeDir.appendingPathComponent(folder).appendingPathComponent("some-file.txt")
+    expect(FSHelpers.isCloudManaged(probe) == synced,
+           "~/\(folder): isCloudManaged agrees with iCloud (synced=\(synced))")
+}
+// A cache path is never mistaken for a synced file.
+expect(!FSHelpers.isCloudManaged(homeDir.appendingPathComponent("Library/Caches/x")),
+       "caches are not reported as iCloud items")
+
 // ── Orphaned app data: the false-positive rules ─────────────────────
 section("OrphanedAppDataScanner")
 let fakeIndex = InstalledAppsIndex(bundleIDs: ["com.acme.editor", "com.figma.desktop"])
@@ -394,9 +429,12 @@ if ProcessInfo.processInfo.environment["SWEEP_LIVE"] != nil {
         guard !items.isEmpty else { continue }
         let total = items.reduce(Int64(0)) { $0 + $1.sizeBytes }
         print("  \(scanner.category.name) — \(ByteText.string(total)) in \(items.count) items")
+        let cloud = items.filter(\.isCloudManaged).count
+        if cloud > 0 { print("      ↳ \(cloud) of these are iCloud-synced") }
         for item in items.sorted(by: { $0.sizeBytes > $1.sizeBytes }).prefix(8) {
             let idle = item.monthsSinceLastUse.map { " (idle \($0)m)" } ?? ""
-            print("      \(ByteText.string(item.sizeBytes))\t\(item.displayName)\(idle)")
+            let icloud = item.isCloudManaged ? " [iCloud]" : ""
+            print("      \(ByteText.string(item.sizeBytes))\t\(item.displayName)\(idle)\(icloud)")
         }
     }
 }

@@ -90,12 +90,16 @@ public enum SelectionPolicy {
             .reduce(0) { $0 + $1.sizeBytes }
     }
 
-    /// The one-click quick clean: Safe risk AND recoverable (goes to Trash).
-    /// Permanent removals (Docker) never ride along on a single click — the
-    /// user opts into those item by item.
+    /// The one-click quick clean: Safe risk, recoverable (goes to Trash), and
+    /// local. Permanent removals (Docker) never ride along on a single click —
+    /// the user opts into those item by item. Nor do iCloud-synced files: their
+    /// real consequence reaches the user's other devices, which is more than a
+    /// button labelled "Safe" can honestly promise, whatever risk level a
+    /// future category might assign.
     public static func quickCleanItems(in results: [CategoryScanResult]) -> [ScanItem] {
         results.flatMap(\.items).filter {
             $0.risk == .safe
+                && !$0.isCloudManaged
                 && (Catalog.category($0.categoryID)?.removal ?? .trash) == .trash
         }
     }

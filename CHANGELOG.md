@@ -6,6 +6,16 @@ Per-release details are also generated from merged pull requests on the
 
 ## [Unreleased]
 
+### Fixed
+- **iCloud-synced files are now identified and flagged.** Sweep listed files in
+  `~/Desktop` and `~/Documents` without knowing iCloud syncs them, so trashing
+  one would have removed it from the user's other devices with no warning. Such
+  items now carry a badge and their own consequence line, and are excluded from
+  quick clean and the default selection. Detection can't rely on the documented
+  ubiquity keys: with "Desktop & Documents Folders" enabled, `~/Desktop` is a
+  firmlink and those keys report nil for it — only the
+  `~/Library/Mobile Documents` path answers true.
+
 ### Added
 - **Container VM disks** (Colima, Lima, Podman, OrbStack, Rancher Desktop).
   On a Mac that runs containers in a VM this file is routinely the biggest

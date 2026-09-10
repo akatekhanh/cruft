@@ -37,6 +37,10 @@ does that they don't, stated narrowly enough to check:
 - **Local AI model stores as a first-class category**, all five of them: Ollama,
   LM Studio, Hugging Face, PyTorch, Whisper — the *model files*, not just their
   logs. These are the caches that quietly reach tens of GB.
+- **It knows what iCloud syncs.** Deleting a synced file removes it from your
+  other devices, so those items are badged, get their own warning line, and stay
+  out of quick clean. (The macOS ubiquity APIs report nothing for a synced
+  `~/Desktop`; Sweep detects it anyway.)
 - **Nothing without an undo is ever pre-selected.** A Docker build cache is
   "safe" — it rebuilds itself — but it never lands in the Trash, so Sweep leaves
   it unticked. Every removal that isn't recoverable says so in the row, and the

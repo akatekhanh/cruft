@@ -52,6 +52,10 @@ public enum Catalog {
               detail: "Downloaded Go modules and the compiler's build cache.",
               consequence: "Next build re-downloads modules and recompiles from scratch, one time.",
               risk: .safe, systemImage: "shippingbox"),
+        .init(id: "cli-old-versions", name: "Old CLI tool versions",
+              detail: "Previous releases of self-updating command-line tools (Claude Code, Cursor Agent, Copilot CLI) that install side by side and never clean up. The version currently in use is never listed.",
+              consequence: "Nothing changes — you keep running the current version. You just can't roll back to an older one without reinstalling it.",
+              risk: .safe, systemImage: "terminal"),
         .init(id: "editor-caches", name: "Editor caches",
               detail: "Cache and cached-data folders of VS Code, Cursor, Windsurf and JetBrains IDEs — not your settings or extensions.",
               consequence: "Editors rebuild these on next launch; your settings, extensions and projects are untouched.",
@@ -158,7 +162,7 @@ public enum Catalog {
               systemImage: "hammer.fill",
               categoryIDs: ["xcode-derived", "device-support", "simulators", "npm-cache",
                             "pip-cache", "brew-cache", "cocoapods-cache", "gradle-cache",
-                            "rust-cache", "go-cache", "editor-caches",
+                            "rust-cache", "go-cache", "cli-old-versions", "editor-caches",
                             "docker-build-cache", "docker-dangling-images",
                             "docker-stopped-containers", "docker-unused-images",
                             "docker-unused-volumes", "docker-data", "container-vm-disks",
@@ -191,8 +195,8 @@ public enum Catalog {
               blurb: "A sensible clean-up for any Mac.",
               systemImage: "person.fill",
               categoryIDs: ["user-caches", "logs", "browser-caches", "old-downloads",
-                            "orphaned-app-data", "ai-models", "trash", "large-files",
-                            "ios-backups"]),
+                            "orphaned-app-data", "cli-old-versions", "ai-models",
+                            "trash", "large-files", "ios-backups"]),
     ]
 
     /// Cross-role sweep: every category, biggest win first. Not part of `roles`

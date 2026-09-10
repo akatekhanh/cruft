@@ -57,16 +57,21 @@ public enum SweepInfraFactory {
         case "npm-cache":
             return WholeDirectoryScanner(
                 category: category,
-                roots: ["~/.npm", "~/Library/Caches/Yarn", "~/Library/pnpm/store"],
-                labels: ["npm cache", "Yarn cache", "pnpm store"]
+                roots: ["~/.npm", "~/Library/Caches/Yarn", "~/Library/pnpm/store",
+                        "~/.bun/install/cache"],
+                labels: ["npm cache", "Yarn cache", "pnpm store", "Bun install cache"]
             )
 
         case "pip-cache":
             return WholeDirectoryScanner(
                 category: category,
                 roots: ["~/Library/Caches/pip", "~/.cache/pip", "~/.cache/uv",
-                        "~/Library/Caches/uv"],
-                labels: ["pip cache", "pip cache (XDG)", "uv cache", "uv cache (macOS)"]
+                        "~/Library/Caches/uv",
+                        "~/Library/Caches/pypoetry/artifacts",
+                        "~/Library/Caches/pypoetry/cache",
+                        "~/.cache/pre-commit"],
+                labels: ["pip cache", "pip cache (XDG)", "uv cache", "uv cache (macOS)",
+                         "Poetry artifacts", "Poetry cache", "pre-commit hook environments"]
             )
 
         case "brew-cache":
@@ -82,8 +87,8 @@ public enum SweepInfraFactory {
         case "gradle-cache":
             return WholeDirectoryScanner(
                 category: category,
-                roots: ["~/.gradle/caches", "~/.m2/repository"],
-                labels: ["Gradle caches", "Maven repository"]
+                roots: ["~/.gradle/caches", "~/.m2/repository", "~/.gradle/wrapper/dists"],
+                labels: ["Gradle caches", "Maven repository", "Gradle distributions"]
             )
 
         case "docker-build-cache", "docker-dangling-images", "docker-stopped-containers",
@@ -109,6 +114,9 @@ public enum SweepInfraFactory {
                 roots: ["~/go/pkg/mod", "~/Library/Caches/go-build"],
                 labels: ["Go module cache", "Go build cache"]
             )
+
+        case "cli-old-versions":
+            return CLIVersionsScanner(category: category)
 
         case "editor-caches":
             // Only the cache-shaped subfolders: sibling directories in the same
@@ -217,8 +225,13 @@ public enum SweepInfraFactory {
                 roots: [
                     "~/Library/Caches/Google/Chrome", "~/Library/Caches/com.apple.Safari",
                     "~/Library/Caches/Firefox", "~/Library/Caches/Microsoft Edge",
+                    "~/Library/Caches/BraveSoftware", "~/Library/Caches/company.thebrowser.Browser",
+                    "~/Library/Caches/com.operasoftware.Opera",
+                    "~/Library/Caches/com.vivaldi.Vivaldi", "~/Library/Caches/Chromium",
                 ],
-                labels: ["Chrome cache", "Safari cache", "Firefox cache", "Edge cache"]
+                labels: ["Chrome cache", "Safari cache", "Firefox cache", "Edge cache",
+                         "Brave cache", "Arc cache", "Opera cache", "Vivaldi cache",
+                         "Chromium cache"]
             )
 
         case "zoom-teams-cache":

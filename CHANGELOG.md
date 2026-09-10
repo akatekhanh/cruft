@@ -25,11 +25,22 @@ Per-release details are also generated from merged pull requests on the
   the guest but never shrinks the host file, which is why pruning 30 GB can
   change nothing on your disk. Reported as Risky, with that distinction
   spelled out instead of a one-click fix.
+- **Old CLI tool versions**: self-updating tools like Claude Code install each
+  release beside the last and never clean up — 1.19 GB in six stale copies on
+  the machine this was written on, at ~200 MB per release. The live version is
+  identified by resolving the launcher symlink rather than by timestamp,
+  because these tools stage the next release *before* switching the symlink; a
+  "keep the newest" rule would delete the binary you are running. If the
+  launcher can't be resolved, nothing in that location is offered at all.
 - **Rust crates & toolchains** (`~/.cargo/registry`, `~/.rustup/toolchains`,
   `~/.cargo/git`), **Go modules & build cache**, **editor caches** (VS Code,
   Cursor, Windsurf, JetBrains — the cache subfolders only, never settings or
   extensions), and **chat app caches** (Slack, Discord, Signal — cache folders
   only, never message stores).
+- More paths for categories that already existed: Bun's install cache
+  (JavaScript), Poetry artifacts and pre-commit environments (Python — but
+  never Poetry's `virtualenvs`, which hold interpreters in use), Gradle
+  distributions, and Brave / Arc / Opera / Vivaldi / Chromium browser caches.
 - `uv`'s cache joins the Python package category, which is where most of the
   gigabytes now live on a modern Python machine.
 - **Leftovers from deleted apps**: finds `~/Library` data belonging to apps that

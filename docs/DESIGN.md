@@ -7,20 +7,27 @@ launch; the app scans only categories relevant to that role, then presents resul
 grouped by **risk level** for review before anything is moved to Trash.
 
 **Safety invariants (non-negotiable):**
-- Nothing is ever deleted permanently. Cleaning = `FileManager.trashItem` (recoverable).
-- Nothing is pre-selected except `safe` items. `review`/`risky` are opt-in per item.
+- Cleaning = `FileManager.trashItem` (recoverable). The one exception is Docker,
+  which has no trash; those categories declare `removal: .external` and every
+  piece of UI text about them says the removal is permanent.
+- Pre-selection requires all three: `safe` risk, **and** recoverable, **and**
+  not iCloud-synced. `review`/`risky` are opt-in per item, and so is anything
+  whose deletion can't be undone or reaches the user's other devices.
 - Honest, calm language. No fake urgency, no red scare numbers, no auto-clean.
 
-## 2. Role profiles (6)
+## 2. Role profiles
 
-| id | Name | Icon (SF Symbol) | Categories |
-|----|------|------------------|-----------|
-| developer | Developer | hammer.fill | xcode-derived, device-support, simulators, npm-cache, pip-cache, brew-cache, cocoapods-cache, gradle-cache, docker-data, user-caches, logs, trash |
-| artist | Designer / Artist | paintpalette.fill | adobe-media-cache, font-caches, sketch-cache, user-caches, large-files, old-downloads, trash |
-| video | Video / Content Creator | video.fill | adobe-media-cache, fcp-render, screen-recordings, large-files, old-downloads, user-caches, trash |
-| office | Office worker | doc.text.fill | old-downloads, mail-downloads, browser-caches, desktop-screenshots, user-caches, logs, trash |
-| marketing | Marketing | megaphone.fill | browser-caches, zoom-teams-cache, old-downloads, desktop-screenshots, large-files, user-caches, trash |
-| general | Everyday user | person.fill | user-caches, logs, browser-caches, old-downloads, trash, large-files, ios-backups |
+Six job profiles — Developer · Designer/Artist · Video creator · Office work ·
+Marketing · Everyday use — plus **Smart Clean**, which covers every category and
+is the first tab. Each profile scans only what's relevant to that work, so a
+video editor is never asked about DerivedData and a developer is never shown
+their Movies folder.
+
+The exact membership of each profile lives in `Catalog.roles` in
+[`Sources/SweepCore/Catalog.swift`](../Sources/SweepCore/Catalog.swift) and is
+deliberately not duplicated here: a hand-maintained copy of it went stale within
+two releases. `SweepChecks` asserts every referenced category exists and that
+every role has at least one `safe` category.
 
 ## 3. Categories & risk model
 
@@ -74,11 +81,12 @@ is not a cache, whatever folder it lives in.
 | xcode-derived | safe | ~/Library/Developer/Xcode/DerivedData |
 | device-support | review | ~/Library/Developer/Xcode/iOS DeviceSupport |
 | simulators | review | ~/Library/Developer/CoreSimulator/Caches, .../Devices unavailable |
-| npm-cache | safe | ~/.npm, ~/Library/Caches/Yarn, ~/Library/pnpm/store |
-| pip-cache | safe | ~/Library/Caches/pip, ~/.cache/pip |
+| npm-cache | safe | ~/.npm, ~/Library/Caches/Yarn, ~/Library/pnpm/store, ~/.bun/install/cache |
+| pip-cache | safe | ~/Library/Caches/pip, ~/.cache/pip, ~/.cache/uv, ~/Library/Caches/uv, ~/Library/Caches/pypoetry/{artifacts,cache} (**never** its `virtualenvs` sibling — those hold interpreters in use), ~/.cache/pre-commit |
 | brew-cache | safe | ~/Library/Caches/Homebrew |
 | cocoapods-cache | safe | ~/Library/Caches/CocoaPods |
-| gradle-cache | review | ~/.gradle/caches, ~/.m2/repository |
+| gradle-cache | review | ~/.gradle/caches, ~/.m2/repository, ~/.gradle/wrapper/dists |
+| cli-old-versions | safe | Previous releases of self-updating CLIs: ~/.local/share/claude/versions, ~/.local/share/cursor-agent/versions, ~/.copilot/pkg/universal. The live version is found by resolving the launcher symlink (~/.local/bin/claude etc.), **not** by timestamp — these tools stage the next release before switching the symlink, so "keep the newest" would delete the running binary. No resolvable launcher → nothing reported |
 | rust-cache | review | ~/.cargo/registry, ~/.rustup/toolchains, ~/.cargo/git |
 | go-cache | safe | ~/go/pkg/mod, ~/Library/Caches/go-build |
 | editor-caches | safe | Code/Cursor/Windsurf `Cache`, `CachedData`, `CachedExtensionVSIXs`; ~/Library/Caches/JetBrains, ~/Library/Logs/JetBrains — cache-shaped subfolders only, never settings or extensions |
@@ -97,7 +105,7 @@ is not a cache, whatever folder it lives in.
 | sketch-cache | safe | ~/Library/Caches/com.bohemiancoding.sketch3, ~/Library/Caches/com.figma.Desktop |
 | fcp-render | review | ~/Movies/*.fcpbundle/**/Render Files (top-level bundles only) |
 | screen-recordings | review | ~/Desktop + ~/Movies files matching "Screen Recording*" |
-| browser-caches | review | Chrome/Safari/Firefox/Edge cache dirs |
+| browser-caches | review | Chrome, Safari, Firefox, Edge, Brave, Arc, Opera, Vivaldi, Chromium cache dirs. Only caches: never `History`, `Cookies` or `Web Data` |
 | zoom-teams-cache | review | ~/Library/Application Support/zoom.us/AutoUpdater + data, Teams caches |
 | old-downloads | review | ~/Downloads items not modified in 90 days |
 | desktop-screenshots | review | ~/Desktop files matching "Screenshot*"/"Ảnh chụp*" |

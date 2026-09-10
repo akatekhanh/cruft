@@ -416,6 +416,50 @@ let readRecently = ScanItem(url: URL(fileURLWithPath: "/tmp/z"), displayName: "z
                             lastAccessed: Date())
 expect(readRecently.monthsSinceLastUse == 0, "recent read beats an old write")
 
+// ── Old CLI versions: never delete the running binary ───────────────
+section("CLIVersionsScanner")
+do {
+    let d = try tempDir(); defer { try? FileManager.default.removeItem(at: d) }
+    let versions = d.appendingPathComponent("versions")
+    let bin = d.appendingPathComponent("bin")
+    try FileManager.default.createDirectory(at: versions, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
+    for v in ["1.0.0", "1.0.1", "1.0.2"] {
+        let dir = versions.appendingPathComponent(v)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try write(dir, "binary", bytes: 1_000_000)
+    }
+    // The launcher points at 1.0.1 while 1.0.2 is newer on disk — exactly the
+    // staged-release case that a "keep the newest" rule would get wrong.
+    let launcher = bin.appendingPathComponent("tool")
+    try FileManager.default.createSymbolicLink(
+        at: launcher, withDestinationURL: versions.appendingPathComponent("1.0.1"))
+
+    expect(CLIVersionsScanner.activeVersion(versionsDir: versions, launcher: launcher) == "1.0.1",
+           "active version comes from the symlink, not the timestamp")
+
+    let tool = CLIVersionsScanner.Tool(name: "Tool", versionsDir: versions.path,
+                                       launcher: launcher.path)
+    let found = await CLIVersionsScanner(
+        category: cat("cli-old-versions", .safe), tools: [tool]).scan()
+    expect(Set(found.map(\.displayName)) == ["Tool 1.0.0", "Tool 1.0.2"],
+           "lists every version except the running one, got \(found.map(\.displayName))")
+
+    // Fail closed: with no launcher there is no way to know what is live, so
+    // nothing may be offered.
+    let noLauncher = CLIVersionsScanner.Tool(name: "Tool", versionsDir: versions.path,
+                                             launcher: bin.appendingPathComponent("missing").path)
+    let none = await CLIVersionsScanner(
+        category: cat("cli-old-versions", .safe), tools: [noLauncher]).scan()
+    expect(none.isEmpty, "no launcher → nothing reported")
+
+    // A launcher pointing outside the versions directory proves nothing either.
+    let stray = bin.appendingPathComponent("stray")
+    try FileManager.default.createSymbolicLink(at: stray, withDestinationURL: d)
+    expect(CLIVersionsScanner.activeVersion(versionsDir: versions, launcher: stray) == nil,
+           "a launcher outside the versions dir yields no active version")
+} catch { expect(false, "CLIVersionsScanner setup: \(error)") }
+
 // ── Live scan (opt-in) ──────────────────────────────────────────────
 // `SWEEP_LIVE=1 swift run SweepChecks` scans this machine for real and prints
 // what each category found. Not part of the pass/fail suite — it touches the

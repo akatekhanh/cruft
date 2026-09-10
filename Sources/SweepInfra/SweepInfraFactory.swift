@@ -64,8 +64,9 @@ public enum SweepInfraFactory {
         case "pip-cache":
             return WholeDirectoryScanner(
                 category: category,
-                roots: ["~/Library/Caches/pip", "~/.cache/pip"],
-                labels: ["pip cache", "pip cache (XDG)"]
+                roots: ["~/Library/Caches/pip", "~/.cache/pip", "~/.cache/uv",
+                        "~/Library/Caches/uv"],
+                labels: ["pip cache", "pip cache (XDG)", "uv cache", "uv cache (macOS)"]
             )
 
         case "brew-cache":
@@ -91,6 +92,69 @@ public enum SweepInfraFactory {
 
         case "docker-data":
             return DockerDiskFallbackScanner(category: category, inventory: dockerInventory)
+
+        case "container-vm-disks":
+            return ContainerVMScanner(category: category)
+
+        case "rust-cache":
+            return WholeDirectoryScanner(
+                category: category,
+                roots: ["~/.cargo/registry", "~/.rustup/toolchains", "~/.cargo/git"],
+                labels: ["Cargo crate registry", "Rust toolchains", "Cargo git checkouts"]
+            )
+
+        case "go-cache":
+            return WholeDirectoryScanner(
+                category: category,
+                roots: ["~/go/pkg/mod", "~/Library/Caches/go-build"],
+                labels: ["Go module cache", "Go build cache"]
+            )
+
+        case "editor-caches":
+            // Only the cache-shaped subfolders: sibling directories in the same
+            // parent hold settings, extensions and workspace state.
+            return WholeDirectoryScanner(
+                category: category,
+                roots: [
+                    "~/Library/Application Support/Code/Cache",
+                    "~/Library/Application Support/Code/CachedData",
+                    "~/Library/Application Support/Code/CachedExtensionVSIXs",
+                    "~/Library/Application Support/Cursor/Cache",
+                    "~/Library/Application Support/Cursor/CachedData",
+                    "~/Library/Application Support/Windsurf/Cache",
+                    "~/Library/Caches/JetBrains",
+                    "~/Library/Logs/JetBrains",
+                ],
+                labels: [
+                    "VS Code cache", "VS Code cached data", "VS Code extension downloads",
+                    "Cursor cache", "Cursor cached data", "Windsurf cache",
+                    "JetBrains caches", "JetBrains logs",
+                ]
+            )
+
+        case "chat-app-caches":
+            // Message stores live beside these folders and are never listed.
+            return WholeDirectoryScanner(
+                category: category,
+                roots: [
+                    "~/Library/Application Support/Slack/Cache",
+                    "~/Library/Application Support/Slack/Service Worker/CacheStorage",
+                    "~/Library/Application Support/Slack/Code Cache",
+                    "~/Library/Application Support/discord/Cache",
+                    "~/Library/Application Support/discord/Code Cache",
+                    "~/Library/Application Support/discord/GPUCache",
+                    // Telegram's media cache sits behind a per-account path
+                    // (`account-<id>`) that these scanners can't glob, and its
+                    // parent folder holds the message store — so it is left out
+                    // rather than approximated.
+                    "~/Library/Application Support/Signal/Cache",
+                ],
+                labels: [
+                    "Slack cache", "Slack service-worker cache", "Slack code cache",
+                    "Discord cache", "Discord code cache", "Discord GPU cache",
+                    "Signal cache",
+                ]
+            )
 
         case "orphaned-app-data":
             return OrphanedAppDataScanner(category: category)

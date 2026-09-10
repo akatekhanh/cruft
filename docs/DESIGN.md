@@ -55,6 +55,11 @@ read for years, so a recent read means it's live regardless of its age.
 | brew-cache | safe | ~/Library/Caches/Homebrew |
 | cocoapods-cache | safe | ~/Library/Caches/CocoaPods |
 | gradle-cache | review | ~/.gradle/caches, ~/.m2/repository |
+| rust-cache | review | ~/.cargo/registry, ~/.rustup/toolchains, ~/.cargo/git |
+| go-cache | safe | ~/go/pkg/mod, ~/Library/Caches/go-build |
+| editor-caches | safe | Code/Cursor/Windsurf `Cache`, `CachedData`, `CachedExtensionVSIXs`; ~/Library/Caches/JetBrains, ~/Library/Logs/JetBrains — cache-shaped subfolders only, never settings or extensions |
+| chat-app-caches | review | Slack `Cache` + `Service Worker/CacheStorage` + `Code Cache`, Discord `Cache`/`Code Cache`/`GPUCache`, Signal `Cache`. Message stores are siblings of these and never listed. Telegram is omitted: its media cache sits behind a per-account path these scanners can't glob |
+| container-vm-disks | risky | ~/.colima/_lima, ~/.lima, ~/.local/share/containers/podman/machine, ~/.orbstack/data, rancher-desktop/lima, ~/.docker/desktop/vms. **Usually the largest single object on a dev Mac** (76 GB on the author's). Grow-only: pruning Docker frees space *inside* the guest, not on the host — reclaiming it means recreating the VM |
 | docker-build-cache | safe · **external** | `docker system df -v` → BuildCache not in use (one aggregate item; `docker builder prune`) |
 | docker-dangling-images | safe · **external** | untagged images with no container |
 | docker-stopped-containers | review · **external** | containers whose status is Exited/Created/Dead |

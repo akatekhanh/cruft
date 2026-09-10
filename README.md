@@ -74,12 +74,13 @@ Marketing · Everyday use.
 
 | | |
 |---|---|
-| **Developer** | Xcode DerivedData, iOS device support, simulator caches, npm/yarn/pnpm, pip, Homebrew, CocoaPods, Gradle/Maven |
+| **Developer** | Xcode DerivedData, iOS device support, simulator caches, npm/yarn/pnpm, pip/uv, Cargo + rustup, Go modules + build cache, Homebrew, CocoaPods, Gradle/Maven, editor caches (VS Code / Cursor / JetBrains) |
+| **Container VMs** | Colima, Lima, Podman, OrbStack, Rancher Desktop disk images — usually the single biggest file on a developer's Mac, and invisible to cache cleaners |
 | **Docker** | build cache, dangling images, stopped containers, unused images, unused volumes — scanned through `docker system df` |
 | **Local AI** | Ollama, LM Studio, Hugging Face, PyTorch, Whisper model stores |
 | **Creative** | Adobe media cache, Final Cut render files, Sketch/Figma caches, font caches |
 | **Leftovers** | settings and caches of apps you already deleted, found by matching bundle ids against what's installed |
-| **Everyday** | browser caches, Zoom/Teams caches, old downloads, screenshots, screen recordings, Mail attachment cache, Trash |
+| **Everyday** | browser caches, Zoom/Teams and Slack/Discord/Signal caches, old downloads, screenshots, screen recordings, Mail attachment cache, Trash |
 | **Risky, opt-in** | large files in your folders, iPhone/iPad backups |
 
 **Docker is the one exception to "everything is recoverable".** Docker has no

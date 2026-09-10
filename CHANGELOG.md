@@ -7,6 +7,21 @@ Per-release details are also generated from merged pull requests on the
 ## [Unreleased]
 
 ### Added
+- **Container VM disks** (Colima, Lima, Podman, OrbStack, Rancher Desktop).
+  On a Mac that runs containers in a VM this file is routinely the biggest
+  object on the disk — 76 GB on the machine this was developed on — and no
+  cache cleaner sees it, because it is one opaque file rather than a cache
+  directory. It is also grow-only: `docker system prune` frees space inside
+  the guest but never shrinks the host file, which is why pruning 30 GB can
+  change nothing on your disk. Reported as Risky, with that distinction
+  spelled out instead of a one-click fix.
+- **Rust crates & toolchains** (`~/.cargo/registry`, `~/.rustup/toolchains`,
+  `~/.cargo/git`), **Go modules & build cache**, **editor caches** (VS Code,
+  Cursor, Windsurf, JetBrains — the cache subfolders only, never settings or
+  extensions), and **chat app caches** (Slack, Discord, Signal — cache folders
+  only, never message stores).
+- `uv`'s cache joins the Python package category, which is where most of the
+  gigabytes now live on a modern Python machine.
 - **Leftovers from deleted apps**: finds `~/Library` data belonging to apps that
   are no longer installed, by matching bundle-identifier-shaped folder names
   against installed *and* running apps. Deliberately conservative — Apple ids,

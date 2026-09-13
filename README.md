@@ -37,6 +37,12 @@ does that they don't, stated narrowly enough to check:
 - **Local AI model stores as a first-class category**, all five of them: Ollama,
   LM Studio, Hugging Face, PyTorch, Whisper — the *model files*, not just their
   logs. These are the caches that quietly reach tens of GB.
+- **"Other" is not the biggest slice.** Most storage charts — including
+  macOS's own — put the majority of a developer's disk in a wedge labelled
+  "Other". Sweep measures developer data (every `~/.tool` directory, where
+  `~/.colima` alone can be 80 GB) and the system temp tree, which on the
+  machine this was built on took "Other" from 145 GB down to 46 GB. What's left
+  is macOS itself, and the chart says so in words.
 - **It knows what iCloud syncs.** Deleting a synced file removes it from your
   other devices, so those items are badged, get their own warning line, and stay
   out of quick clean. (The macOS ubiquity APIs report nothing for a synced

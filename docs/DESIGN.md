@@ -65,6 +65,46 @@ answers true (verified on macOS 26). Sweep therefore also treats
 `~/Desktop`/`~/Documents` as cloud-managed when the matching folder exists under
 `com~apple~CloudDocs`, which iCloud creates exactly when that sync is on.
 
+### The Overview breakdown, and why "Other" was the biggest slice
+
+The first version measured Apps · App data · Documents · Media · Downloads, and
+on a working developer Mac that left **145 GB of 189 GB used sitting in
+"Other"** — a chart whose largest wedge means "don't know" has explained
+nothing, which is also the criticism of macOS's own storage screen.
+
+Two slices fixed most of it:
+
+- **Developer data** — every dot-directory in the home folder, plus `~/go` and
+  Homebrew. Tools install into `~/.something` by convention, and none of the
+  original slices covered that: `~/.colima` alone was 81 GB. Enumerated rather
+  than hard-coded, because the interesting one is always the tool nobody
+  thought to list.
+- **System temp** — this user's tree under `/private/var/folders`, found via
+  `NSTemporaryDirectory()` rather than by guessing the hashed directory name.
+
+That took "Other" from 145 GB to 46 GB, and what remains is essentially macOS
+itself, which is why the chart now says so in words underneath.
+
+### APFS clones report a size they do not occupy
+
+Measuring `/private/var/folders` produced a figure **larger than the disk's own
+used total** — 198 GB accounted for against 189 GB used. The cause was 39
+directories under `.../X/com.google.Chrome.code_sign_clone`, 1.4 GB each by
+every measurement macOS offers.
+
+They are APFS clones: copy-on-write copies that share their blocks with the
+installed app. Each file honestly reports its full allocated size, and
+`totalFileAllocatedSizeKey` — the key this app uses everywhere, and the one
+`du` agrees with — has no way to say "but these blocks belong to someone else
+too". Deleting one outright freed exactly zero bytes; the volume's free space
+did not move.
+
+So `DirectorySizer.cloneDirectoryNames` excludes `X/` from the breakdown, and
+no category offers those clones for cleaning. A category that did would have
+promised 54 GB and delivered nothing, which is the precise dishonesty this app
+exists to avoid. The general lesson for anyone adding a scanner: an allocated
+size is a claim about one file, not a promise about free space.
+
 ### A pattern to avoid
 
 At least one popular open-source cleaner deletes `History`, `Cookies` and

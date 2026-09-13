@@ -16,7 +16,7 @@ enum SnapshotRunner {
         )
         model.results = Self.fakeResults()
         model.selection = SelectionPolicy.defaultSelection(in: model.results)
-        model.diskStats = DiskStats(totalBytes: 245_110_000_000, availableBytes: 73_300_000_000)
+        model.diskStats = DiskStats(totalBytes: 245_110_000_000, availableBytes: 56_560_000_000)
         model.storageBreakdown = Self.fakeBreakdown()
 
         for scheme in [("light", NSAppearance(named: .aqua)!),
@@ -155,15 +155,19 @@ enum SnapshotRunner {
     private static func fakeBreakdown() -> [StorageComponent] {
         [
             StorageComponent(id: "apps", name: "Apps", paths: [],
-                             bytes: 5_710_000_000, measured: true),
+                             bytes: 6_570_000_000, measured: true),
             StorageComponent(id: "appdata", name: "App data & caches", paths: [],
-                             bytes: 12_820_000_000, measured: true),
+                             bytes: 19_360_000_000, measured: true),
+            StorageComponent(id: "devdata", name: "Developer data", paths: [],
+                             bytes: 107_540_000_000, measured: true),
             StorageComponent(id: "documents", name: "Documents", paths: [],
-                             bytes: 7_400_000_000, measured: true),
+                             bytes: 7_800_000_000, measured: true),
             StorageComponent(id: "media", name: "Media", paths: [],
                              bytes: 448_000_000, measured: true),
             StorageComponent(id: "downloads", name: "Downloads & Desktop", paths: [],
                              bytes: 255_500_000, measured: true),
+            StorageComponent(id: "systemtemp", name: "System temp", paths: [],
+                             bytes: 566_400_000, measured: true),
         ]
     }
 }

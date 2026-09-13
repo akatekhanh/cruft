@@ -7,6 +7,19 @@ Per-release details are also generated from merged pull requests on the
 ## [Unreleased]
 
 ### Fixed
+- **"Other" no longer swallows the disk.** The Overview measured five slices and
+  left 145 GB of 189 GB used in a wedge labelled "Other" — the same thing macOS's
+  own storage screen does, and just as useless. Two new slices account for most
+  of it: **Developer data** (every dot-directory in the home folder plus `~/go`
+  and Homebrew — `~/.colima` alone was 81 GB) and **System temp** (this user's
+  tree under `/private/var/folders`). "Other" is now 46 GB and the chart explains
+  in words that what's left is macOS itself.
+- **APFS clones no longer inflate the totals.** Measuring the temp tree produced
+  198 GB accounted for against 189 GB actually used. The cause: 39 Chrome
+  code-signing clones, 1.4 GB each by every measurement macOS offers, sharing
+  every block with the installed app. Deleting one freed exactly zero bytes. The
+  clone directory is now excluded, and no category offers those clones — one that
+  did would have promised 54 GB and delivered nothing.
 - **iCloud-synced files are now identified and flagged.** Sweep listed files in
   `~/Desktop` and `~/Documents` without knowing iCloud syncs them, so trashing
   one would have removed it from the user's other devices with no warning. Such

@@ -44,15 +44,39 @@ final class AppModel {
     var diskStats = DiskStats()
     var isCleaning = false
 
-    /// Storage breakdown for the dashboard chart. Fixed identity order — the
+    /// Storage breakdown for the Overview chart. Fixed identity order — the
     /// palette follows the entity, so slots must never re-sort by size.
-    var storageBreakdown: [StorageComponent] = [
-        StorageComponent(id: "apps", name: "Apps", paths: ["/Applications"]),
-        StorageComponent(id: "appdata", name: "App data & caches", paths: ["~/Library"]),
-        StorageComponent(id: "documents", name: "Documents", paths: ["~/Documents"]),
-        StorageComponent(id: "media", name: "Media", paths: ["~/Movies", "~/Pictures", "~/Music"]),
-        StorageComponent(id: "downloads", name: "Downloads & Desktop", paths: ["~/Downloads", "~/Desktop"]),
-    ]
+    ///
+    /// The list is deliberately longer than a tidy chart would like. Every slice
+    /// missing here lands in "Other", and an Overview whose biggest slice is
+    /// "Other" has explained nothing: the point of measuring developer data and
+    /// the system temp area is that on a real working Mac they are where the
+    /// space went.
+    var storageBreakdown: [StorageComponent] = AppModel.initialBreakdown()
+
+    static func initialBreakdown() -> [StorageComponent] {
+        var components: [StorageComponent] = [
+            StorageComponent(id: "apps", name: "Apps", paths: ["/Applications"]),
+            StorageComponent(id: "appdata", name: "App data & caches", paths: ["~/Library"]),
+            // Homebrew belongs here rather than in its own slice: it is developer
+            // tooling, and one fewer slice keeps the palette clear of the red
+            // step, which would read as a warning in a chart about disk space.
+            StorageComponent(id: "devdata", name: "Developer data",
+                             paths: DirectorySizer.developerDataPaths()
+                                 + DirectorySizer.homebrewPaths()),
+            StorageComponent(id: "documents", name: "Documents", paths: ["~/Documents"]),
+            StorageComponent(id: "media", name: "Media",
+                             paths: ["~/Movies", "~/Pictures", "~/Music"]),
+            StorageComponent(id: "downloads", name: "Downloads & Desktop",
+                             paths: ["~/Downloads", "~/Desktop"]),
+        ]
+        let temp = DirectorySizer.systemTempPaths()
+        if !temp.isEmpty {
+            components.append(StorageComponent(id: "systemtemp", name: "System temp",
+                                               paths: temp))
+        }
+        return components
+    }
     private var breakdownStarted = false
 
     init(scan: ScanUseCase, clean: CleanUseCase) {

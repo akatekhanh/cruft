@@ -483,6 +483,68 @@ if ProcessInfo.processInfo.environment["SWEEP_LIVE"] != nil {
     }
 }
 
+// ── Storage breakdown: where "Other" comes from ──────────────────────
+section("DirectorySizer")
+let devPaths = DirectorySizer.developerDataPaths()
+expect(!devPaths.isEmpty, "developer data paths found on this machine")
+expect(devPaths.allSatisfy { $0.hasPrefix(NSHomeDirectory()) },
+       "developer data stays inside the home folder")
+expect(!devPaths.contains { $0.hasSuffix("/.Trash") },
+       ".Trash is excluded — it has its own slice and its own category")
+
+// The per-user temp tree must never include the code-signing clone directory:
+// its files report full size while sharing blocks with the installed app, and
+// counting them pushed the Overview's total past the disk's own used figure.
+let tempPaths = DirectorySizer.systemTempPaths()
+expect(!tempPaths.contains { $0.hasSuffix("/X") },
+       "the clone directory is excluded from system temp, got \(tempPaths)")
+expect(DirectorySizer.cloneDirectoryNames.contains("X"), "X is a known clone directory")
+if !tempPaths.isEmpty {
+    expect(tempPaths.allSatisfy { $0.contains("/var/folders/") },
+           "system temp paths live under /var/folders")
+}
+
+// Every slice must be measurable without exceeding what the disk says is used;
+// the reverse means something is being counted twice or is not really there.
+let allGroups = ["/Applications", "~/Library", "~/Documents", "~/Movies", "~/Pictures",
+                 "~/Music", "~/Downloads", "~/Desktop"] + devPaths + tempPaths
+let measuredTotal = DirectorySizer.totalSize(ofPaths: allGroups)
+let volumeValues = try? URL(fileURLWithPath: "/").resourceValues(forKeys: [
+    .volumeTotalCapacityKey, .volumeAvailableCapacityForImportantUsageKey])
+let usedOnDisk = Int64(volumeValues?.volumeTotalCapacity ?? 0)
+    - (volumeValues?.volumeAvailableCapacityForImportantUsage ?? 0)
+expect(measuredTotal <= usedOnDisk,
+       "measured slices (\(ByteText.string(measuredTotal))) fit inside used space "
+       + "(\(ByteText.string(usedOnDisk)))")
+
+// ── Live storage breakdown (opt-in) ─────────────────────────────────
+if ProcessInfo.processInfo.environment["SWEEP_LIVE"] != nil {
+    section("LIVE storage breakdown")
+    let groups: [(String, [String])] = [
+        ("Apps", ["/Applications"]),
+        ("App data & caches", ["~/Library"]),
+        ("Developer data", DirectorySizer.developerDataPaths() + DirectorySizer.homebrewPaths()),
+        ("Documents", ["~/Documents"]),
+        ("Media", ["~/Movies", "~/Pictures", "~/Music"]),
+        ("Downloads & Desktop", ["~/Downloads", "~/Desktop"]),
+        ("System temp", DirectorySizer.systemTempPaths()),
+    ]
+    var accounted: Int64 = 0
+    for (name, paths) in groups {
+        let bytes = DirectorySizer.totalSize(ofPaths: paths)
+        accounted += bytes
+        print("  \(name.padding(toLength: 22, withPad: " ", startingAt: 0)) \(ByteText.string(bytes))")
+    }
+    let url = URL(fileURLWithPath: "/")
+    let values = try? url.resourceValues(forKeys: [
+        .volumeTotalCapacityKey, .volumeAvailableCapacityForImportantUsageKey])
+    let total = Int64(values?.volumeTotalCapacity ?? 0)
+    let available = values?.volumeAvailableCapacityForImportantUsage ?? 0
+    let used = max(0, total - available)
+    print("  \("Other".padding(toLength: 22, withPad: " ", startingAt: 0)) \(ByteText.string(max(0, used - accounted)))")
+    print("  \("— accounted for".padding(toLength: 22, withPad: " ", startingAt: 0)) \(ByteText.string(accounted)) of \(ByteText.string(used)) used")
+}
+
 // ── Summary ─────────────────────────────────────────────────────────
 print("\n\(passed) passed, \(failed) failed")
 exit(failed == 0 ? 0 : 1)

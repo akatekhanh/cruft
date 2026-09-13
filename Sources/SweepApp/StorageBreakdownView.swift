@@ -12,9 +12,16 @@ struct StorageComponent: Identifiable, Equatable {
     var measured = false
 }
 
-/// Categorical palette (validated for CVD + contrast in light and dark mode —
-/// see docs/DESIGN.md). Fixed slot order; "Other" and "Free" are neutral fills,
-/// not series hues, because they are absences rather than entities.
+/// Categorical palette, validated for colour-vision deficiency and for contrast
+/// against each mode's surface (see docs/DESIGN.md). The slot order is fixed and
+/// tied to the component's identity, never to its size — a slice must not change
+/// colour because the disk filled up.
+///
+/// Seven slots, taken in order from the reference palette's eight. The red
+/// eighth step is deliberately left unused: in a chart about disk space a red
+/// wedge reads as an alarm, and this app does not alarm people about their own
+/// files. "Other" and "Free" are neutral fills rather than series hues, because
+/// they are absences rather than things.
 enum VizPalette {
     private static let light: [Color] = [
         Color(red: 0x2A / 255.0, green: 0x78 / 255.0, blue: 0xD6 / 255.0), // blue
@@ -22,6 +29,8 @@ enum VizPalette {
         Color(red: 0x1B / 255.0, green: 0xAF / 255.0, blue: 0x7A / 255.0), // aqua
         Color(red: 0xED / 255.0, green: 0xA1 / 255.0, blue: 0x00 / 255.0), // yellow
         Color(red: 0xE8 / 255.0, green: 0x7B / 255.0, blue: 0xA4 / 255.0), // magenta
+        Color(red: 0x00 / 255.0, green: 0x83 / 255.0, blue: 0x00 / 255.0), // green
+        Color(red: 0x4A / 255.0, green: 0x3A / 255.0, blue: 0xA7 / 255.0), // violet
     ]
     private static let dark: [Color] = [
         Color(red: 0x39 / 255.0, green: 0x87 / 255.0, blue: 0xE5 / 255.0),
@@ -29,6 +38,8 @@ enum VizPalette {
         Color(red: 0x19 / 255.0, green: 0x9E / 255.0, blue: 0x70 / 255.0),
         Color(red: 0xC9 / 255.0, green: 0x85 / 255.0, blue: 0x00 / 255.0),
         Color(red: 0xD5 / 255.0, green: 0x51 / 255.0, blue: 0x81 / 255.0),
+        Color(red: 0x00 / 255.0, green: 0x83 / 255.0, blue: 0x00 / 255.0),
+        Color(red: 0x90 / 255.0, green: 0x85 / 255.0, blue: 0xE9 / 255.0),
     ]
 
     static func series(_ slot: Int, scheme: ColorScheme) -> Color {
@@ -82,8 +93,32 @@ struct StorageBreakdownView: View {
         VStack(alignment: .leading, spacing: 14) {
             bar
             legend
+            if let note = otherNote {
+                Text(note)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
-        .frame(maxWidth: 520)
+        .frame(maxWidth: 660)
+    }
+
+    /// "Other" is whatever the measured slices don't account for, and on a Mac
+    /// that is mostly the operating system — plus, awkwardly, space that no
+    /// longer exists as files. Saying so is better than leaving the biggest
+    /// slice unexplained, which is exactly what macOS's own storage screen does.
+    private var otherNote: String? {
+        guard let other = slices.first(where: { $0.id == "other" }),
+              other.measured, other.bytes > 0,
+              diskStats.usedBytes > 0 else { return nil }
+        let share = Double(other.bytes) / Double(diskStats.usedBytes)
+        guard share > 0.15 else { return nil }
+        return """
+            "Other" is macOS itself plus anything the slices above don't cover — \
+            system files, APFS snapshots, and clones that share their data with \
+            the original. Sweep doesn't offer to clean it, because most of it \
+            either can't be removed or wouldn't free anything if it were.
+            """
     }
 
     private var bar: some View {

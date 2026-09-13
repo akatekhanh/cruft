@@ -1,4 +1,4 @@
-# Contributing to Sweep
+# Contributing to Cruft
 
 Thanks for looking. This is a small, opinionated project — the fastest way to
 get a change merged is to know what it's opinionated *about*.
@@ -48,13 +48,13 @@ be turned down however good the code is:
 
 Most contributions are "please also clean X". That's usually three small edits:
 
-1. `Sources/SweepCore/Catalog.swift` — add the `CleanCategory` (id, plain
+1. `Sources/CruftCore/Catalog.swift` — add the `CleanCategory` (id, plain
    `detail`, honest `consequence`, a risk level, an SF Symbol) and put its id
    in the roles it belongs to.
-2. `Sources/SweepInfra/SweepInfraFactory.swift` — wire the id to a scanner.
+2. `Sources/CruftInfra/CruftInfraFactory.swift` — wire the id to a scanner.
    Reuse an existing one if you can: whole-directory, directory-children,
    name-pattern, aged-files, large-files, or composite.
-3. `Sources/SweepChecks/main.swift` — the catalog checks are exhaustive, so
+3. `Sources/CruftChecks/main.swift` — the catalog checks are exhaustive, so
    they'll tell you what you forgot.
 
 Pick the risk level honestly: **Safe** = regenerates itself with no user-visible
@@ -65,14 +65,14 @@ re-login) · **Risky** = actual user data.
 
 ```sh
 swift build                 # build
-swift run SweepChecks       # the full check suite — no Xcode needed
+swift run CruftChecks       # the full check suite — no Xcode needed
 swift test                  # same assertions via Swift Testing (needs Xcode)
-swift run SweepApp          # run the app
-./scripts/make-app.sh       # release bundle → dist/Sweep.app
-SWEEP_SNAPSHOT_DIR=docs/screenshots swift run SweepApp   # regenerate screenshots
+swift run CruftApp          # run the app
+./scripts/make-app.sh       # release bundle → dist/Cruft.app
+CRUFT_SNAPSHOT_DIR=docs/screenshots swift run CruftApp   # regenerate screenshots
 ```
 
-`swift run SweepChecks` must pass before you open a PR. It's the same suite CI
+`swift run CruftChecks` must pass before you open a PR. It's the same suite CI
 runs, and it needs nothing but the Command Line Tools.
 
 ## Style
@@ -81,8 +81,8 @@ Match the file you're editing. A few conventions worth naming:
 
 - Comments explain **why**, not what. If a line needs a comment to say what it
   does, the line usually needs rewriting instead.
-- Domain code (`SweepCore`) imports Foundation and nothing else. It never
-  touches the filesystem — that's `SweepInfra`.
+- Domain code (`CruftCore`) imports Foundation and nothing else. It never
+  touches the filesystem — that's `CruftInfra`.
 - User-facing strings are plain English a non-developer can read. No jargon in
   the UI, even when the thing being cleaned is developer-only.
 

@@ -2,7 +2,7 @@
 
 Notable changes, newest first. Versions follow [SemVer](https://semver.org).
 Per-release details are also generated from merged pull requests on the
-[Releases page](https://github.com/akatekhanh/sweep/releases).
+[Releases page](https://github.com/akatekhanh/cruft/releases).
 
 ## [Unreleased]
 
@@ -20,7 +20,7 @@ Per-release details are also generated from merged pull requests on the
   every block with the installed app. Deleting one freed exactly zero bytes. The
   clone directory is now excluded, and no category offers those clones — one that
   did would have promised 54 GB and delivered nothing.
-- **iCloud-synced files are now identified and flagged.** Sweep listed files in
+- **iCloud-synced files are now identified and flagged.** Cruft listed files in
   `~/Desktop` and `~/Documents` without knowing iCloud syncs them, so trashing
   one would have removed it from the user's other devices with no warning. Such
   items now carry a badge and their own consequence line, and are excluded from
@@ -66,7 +66,7 @@ Per-release details are also generated from merged pull requests on the
   cache still in use is not flagged.
 - **Docker volumes now show their Compose project** (`myproject / pgdata`)
   instead of a 64-character hash; anonymous volumes say so and are abbreviated.
-- `SWEEP_LIVE=1 swift run SweepChecks` prints a real scan of the current
+- `CRUFT_LIVE=1 swift run CruftChecks` prints a real scan of the current
   machine — the only way to judge a scanner's false-positive rate before
   shipping it. (It caught GoogleUpdater being mislabelled as a leftover.)
 
@@ -102,5 +102,5 @@ First public release.
 - Pre-selection is Safe **and** recoverable, so nothing without an undo is ever
   ticked for you.
 
-[Unreleased]: https://github.com/akatekhanh/sweep/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/akatekhanh/sweep/releases/tag/v0.1.0
+[Unreleased]: https://github.com/akatekhanh/cruft/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/akatekhanh/cruft/releases/tag/v0.1.0

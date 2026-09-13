@@ -8,7 +8,7 @@
 
 ## Checks
 
-- [ ] `swift run SweepChecks` passes
+- [ ] `swift run CruftChecks` passes
 - [ ] Nothing is cleaned without an explicit click
 - [ ] Anything that can't be restored from the Trash is **not** pre-selected,
       and its UI text says the removal is permanent

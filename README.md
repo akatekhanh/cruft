@@ -1,13 +1,17 @@
 <div align="center">
 
-<img src="docs/screenshots/icon.png" width="112" alt="Sweep icon">
+<img src="docs/screenshots/icon.png" width="112" alt="Cruft icon">
 
-# Sweep
+# Cruft
 
 **A calm storage cleaner for macOS.** Scan by what you actually do, review by
 honest risk levels, clean to the Trash.
 
-[![CI](https://github.com/akatekhanh/sweep/actions/workflows/ci.yml/badge.svg)](https://github.com/akatekhanh/sweep/actions/workflows/ci.yml)
+*cruft* /krʌft/ — the junk that piles up behind working software: build
+caches, dead containers, model weights, the leftovers of apps you deleted
+years ago.
+
+[![CI](https://github.com/akatekhanh/cruft/actions/workflows/ci.yml/badge.svg)](https://github.com/akatekhanh/cruft/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-black?logo=apple)
 ![Swift 6](https://img.shields.io/badge/Swift-6-orange?logo=swift&logoColor=white)
@@ -15,17 +19,21 @@ honest risk levels, clean to the Trash.
 </div>
 
 Most Mac cleaners make money by making you nervous: red totals, "health
-scores", one big button that deletes things it never names. Sweep does the
+scores", one big button that deletes things it never names. Cruft does the
 opposite. It shows you what it found, tells you in plain language what happens
 if you clean it, pre-selects only what it can put back, and never deletes
 anything you didn't click.
 
-<img src="docs/screenshots/results-light.png" alt="Sweep results screen: sidebar of categories, items grouped by risk level, quick clean banner">
+It is also built for the machine a developer actually has in 2026, where the
+space went to a 76 GB container VM, tens of gigabytes of local model weights,
+and a directory of Docker layers — none of which a cache cleaner looks at.
+
+<img src="docs/screenshots/results-light.png" alt="Cruft results screen: sidebar of categories, items grouped by risk level, quick clean banner">
 
 ## What makes it different
 
 There are good open-source Mac cleaners now — several appeared in 2025–2026, and
-some of them already do risk tiers and trash-only deletion. Here is what Sweep
+some of them already do risk tiers and trash-only deletion. Here is what Cruft
 does that they don't, stated narrowly enough to check:
 
 - **Docker, broken out into the five things you'd actually decide about
@@ -39,16 +47,16 @@ does that they don't, stated narrowly enough to check:
   logs. These are the caches that quietly reach tens of GB.
 - **"Other" is not the biggest slice.** Most storage charts — including
   macOS's own — put the majority of a developer's disk in a wedge labelled
-  "Other". Sweep measures developer data (every `~/.tool` directory, where
+  "Other". Cruft measures developer data (every `~/.tool` directory, where
   `~/.colima` alone can be 80 GB) and the system temp tree, which on the
   machine this was built on took "Other" from 145 GB down to 46 GB. What's left
   is macOS itself, and the chart says so in words.
 - **It knows what iCloud syncs.** Deleting a synced file removes it from your
   other devices, so those items are badged, get their own warning line, and stay
   out of quick clean. (The macOS ubiquity APIs report nothing for a synced
-  `~/Desktop`; Sweep detects it anyway.)
+  `~/Desktop`; Cruft detects it anyway.)
 - **Nothing without an undo is ever pre-selected.** A Docker build cache is
-  "safe" — it rebuilds itself — but it never lands in the Trash, so Sweep leaves
+  "safe" — it rebuilds itself — but it never lands in the Trash, so Cruft leaves
   it unticked. Every removal that isn't recoverable says so in the row, and the
   commit button changes wording as soon as one is selected.
 - **Role-based scanning inside a native app**, so a video editor is never asked
@@ -97,26 +105,26 @@ Marketing · Everyday use.
 trash: removal goes through the docker CLI and is permanent. So those categories
 are marked as such, their consequence text says "not the Trash", they're never
 pre-selected, and the commit button changes from *Move X to Trash* to *Clean X*
-the moment one is selected. If Docker isn't running, Sweep only offers the whole
+the moment one is selected. If Docker isn't running, Cruft only offers the whole
 virtual disk file instead — which does go to the Trash.
 
 ## Install
 
-Download the latest `Sweep-macOS.zip` from
-[Releases](https://github.com/akatekhanh/sweep/releases), unzip, and drag
-`Sweep.app` to `/Applications`.
+Download the latest `Cruft-macOS.zip` from
+[Releases](https://github.com/akatekhanh/cruft/releases), unzip, and drag
+`Cruft.app` to `/Applications`.
 
 **The build is unsigned**, because notarizing requires a paid Apple Developer
 account. macOS will refuse to open it the first time ("Apple could not verify
 …"). To get past it:
 
-> Right-click (or Control-click) `Sweep.app` → **Open** → **Open**.
+> Right-click (or Control-click) `Cruft.app` → **Open** → **Open**.
 
 You only do this once. Or, if you prefer the command line, remove the quarantine
 flag that Safari/Chrome attached to the download:
 
 ```sh
-xattr -d com.apple.quarantine /Applications/Sweep.app
+xattr -d com.apple.quarantine /Applications/Cruft.app
 ```
 
 Don't disable Gatekeeper system-wide (`spctl --master-disable`) — that lowers
@@ -133,19 +141,19 @@ categories simply show as empty — nothing breaks, they just find nothing.
 Command Line Tools are enough; Xcode is only needed for `swift test`.
 
 ```sh
-git clone https://github.com/akatekhanh/sweep.git
+git clone https://github.com/akatekhanh/cruft.git
 cd sweep
-swift run SweepApp          # run it
-swift run SweepChecks       # the full check suite (no Xcode needed)
+swift run CruftApp          # run it
+swift run CruftChecks       # the full check suite (no Xcode needed)
 swift test                  # same assertions via Swift Testing (needs Xcode)
-./scripts/make-app.sh       # release bundle → dist/Sweep.app
+./scripts/make-app.sh       # release bundle → dist/Cruft.app
 ```
 
 Other useful commands:
 
 ```sh
 swift scripts/gen-icon.swift                            # regenerate the app icon
-SWEEP_SNAPSHOT_DIR=docs/screenshots swift run SweepApp   # regenerate screenshots
+CRUFT_SNAPSHOT_DIR=docs/screenshots swift run CruftApp   # regenerate screenshots
 ```
 
 ## Architecture
@@ -153,10 +161,10 @@ SWEEP_SNAPSHOT_DIR=docs/screenshots swift run SweepApp   # regenerate screenshot
 Clean Architecture, dependency rule pointing inward:
 
 ```
-Sources/SweepCore   domain — entities, risk levels, catalog, use cases (Foundation only)
-Sources/SweepInfra  adapters — read-only scanners, Docker CLI, Trash service
-Sources/SweepApp    SwiftUI + MVVM, composition root
-Sources/SweepChecks dependency-free check runner (CI gate)
+Sources/CruftCore   domain — entities, risk levels, catalog, use cases (Foundation only)
+Sources/CruftInfra  adapters — read-only scanners, Docker CLI, Trash service
+Sources/CruftApp    SwiftUI + MVVM, composition root
+Sources/CruftChecks dependency-free check runner (CI gate)
 Tests/              Swift Testing: domain + infra, against temp directories
 ```
 
@@ -172,12 +180,12 @@ behind each risk level is in [docs/DESIGN.md](docs/DESIGN.md).
 ## Contributing
 
 Issues and PRs welcome — please read [CONTRIBUTING.md](CONTRIBUTING.md) first,
-especially the six rules a change has to respect. Found a way to make Sweep
+especially the six rules a change has to respect. Found a way to make Cruft
 delete the wrong thing? That's a security issue: see [SECURITY.md](SECURITY.md).
 
 ## License
 
 [MIT](LICENSE) © 2026 Quoc Khanh
 
-Sweep moves files to the Trash and can remove Docker objects permanently. It
+Cruft moves files to the Trash and can remove Docker objects permanently. It
 comes with no warranty of any kind — read what you're about to clean.

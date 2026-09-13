@@ -19,19 +19,19 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Checks
-        run: swift run SweepChecks
+        run: swift run CruftChecks
 
       - name: Build release bundle
         run: ./scripts/make-app.sh
 
-      # Zip from inside dist/ so the archive contains Sweep.app at its root,
+      # Zip from inside dist/ so the archive contains Cruft.app at its root,
       # and use ditto to preserve the bundle's resource forks and signature.
       - name: Archive
         run: |
           cd dist
-          ditto -c -k --sequesterRsrc --keepParent Sweep.app Sweep-macOS.zip
-          shasum -a 256 Sweep-macOS.zip > Sweep-macOS.zip.sha256
-          cat Sweep-macOS.zip.sha256
+          ditto -c -k --sequesterRsrc --keepParent Cruft.app Cruft-macOS.zip
+          shasum -a 256 Cruft-macOS.zip > Cruft-macOS.zip.sha256
+          cat Cruft-macOS.zip.sha256
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
@@ -39,12 +39,12 @@ jobs:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           generate_release_notes: true
           files: |
-            dist/Sweep-macOS.zip
-            dist/Sweep-macOS.zip.sha256
+            dist/Cruft-macOS.zip
+            dist/Cruft-macOS.zip.sha256
           body: |
             ## Install
 
-            Download `Sweep-macOS.zip`, unzip, and move `Sweep.app` to
+            Download `Cruft-macOS.zip`, unzip, and move `Cruft.app` to
             `/Applications`.
 
             **This build is unsigned**, so macOS will refuse the first launch.

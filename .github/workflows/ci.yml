@@ -22,10 +22,10 @@ jobs:
       - name: Build
         run: swift build -v
 
-      # SweepChecks is the same suite as `swift test` but needs no XCTest
+      # CruftChecks is the same suite as `swift test` but needs no XCTest
       # runtime, so it is the gate: it runs anywhere the toolchain does.
       - name: Checks
-        run: swift run SweepChecks
+        run: swift run CruftChecks
 
       - name: Tests (Swift Testing)
         run: swift test -v
@@ -37,7 +37,7 @@ jobs:
 
       - name: Verify bundle
         run: |
-          test -x dist/Sweep.app/Contents/MacOS/Sweep
-          test -f dist/Sweep.app/Contents/Resources/Sweep.icns
-          plutil -lint dist/Sweep.app/Contents/Info.plist
-          codesign --verify --verbose dist/Sweep.app
+          test -x dist/Cruft.app/Contents/MacOS/Cruft
+          test -f dist/Cruft.app/Contents/Resources/Cruft.icns
+          plutil -lint dist/Cruft.app/Contents/Info.plist
+          codesign --verify --verbose dist/Cruft.app

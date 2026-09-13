@@ -2,14 +2,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "Sweep",
+    name: "Cruft",
     platforms: [.macOS(.v14)],
     targets: [
-        .target(name: "SweepCore"),
-        .target(name: "SweepInfra", dependencies: ["SweepCore"]),
-        .executableTarget(name: "SweepApp", dependencies: ["SweepCore", "SweepInfra"]),
-        .executableTarget(name: "SweepChecks", dependencies: ["SweepCore", "SweepInfra"]),
-        .testTarget(name: "SweepCoreTests", dependencies: ["SweepCore"]),
-        .testTarget(name: "SweepInfraTests", dependencies: ["SweepCore", "SweepInfra"]),
+        .target(name: "CruftCore"),
+        .target(name: "CruftInfra", dependencies: ["CruftCore"]),
+        .executableTarget(name: "CruftApp", dependencies: ["CruftCore", "CruftInfra"]),
+        .executableTarget(name: "CruftChecks", dependencies: ["CruftCore", "CruftInfra"]),
+        .testTarget(name: "CruftCoreTests", dependencies: ["CruftCore"]),
+        .testTarget(name: "CruftInfraTests", dependencies: ["CruftCore", "CruftInfra"]),
     ]
 )

@@ -1,6 +1,6 @@
-// Generates Assets/Sweep.icns — run: swift scripts/gen-icon.swift
+// Generates Assets/Cruft.icns — run: swift scripts/gen-icon.swift
 // Big Sur-style icon: teal gradient squircle on the standard transparent
-// margin, white "sparkles" glyph (Sweep = tidy + a little magic, never scary).
+// margin, white "sparkles" glyph (Cruft = tidy + a little magic, never scary).
 import AppKit
 
 let canvas: CGFloat = 1024
@@ -108,7 +108,7 @@ func writePNG(_ image: NSImage, to url: URL, pixels: Int) {
 
 let fm = FileManager.default
 let root = URL(fileURLWithPath: fm.currentDirectoryPath)
-let iconset = root.appendingPathComponent("Assets/Sweep.iconset")
+let iconset = root.appendingPathComponent("Assets/Cruft.iconset")
 try? fm.removeItem(at: iconset)
 try! fm.createDirectory(at: iconset, withIntermediateDirectories: true)
 
@@ -123,8 +123,8 @@ for base in [16, 32, 128, 256, 512] {
 let task = Process()
 task.executableURL = URL(fileURLWithPath: "/usr/bin/iconutil")
 task.arguments = ["-c", "icns", iconset.path, "-o",
-                  root.appendingPathComponent("Assets/Sweep.icns").path]
+                  root.appendingPathComponent("Assets/Cruft.icns").path]
 try! task.run()
 task.waitUntilExit()
 try? fm.removeItem(at: iconset)
-print(task.terminationStatus == 0 ? "Wrote Assets/Sweep.icns" : "iconutil failed")
+print(task.terminationStatus == 0 ? "Wrote Assets/Cruft.icns" : "iconutil failed")

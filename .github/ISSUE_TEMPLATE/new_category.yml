@@ -1,5 +1,5 @@
 name: Suggest something to clean
-description: A cache, build directory, or leftover Sweep should know about
+description: A cache, build directory, or leftover Cruft should know about
 labels: ["category"]
 body:
   - type: input

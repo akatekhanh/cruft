@@ -6,14 +6,14 @@ body:
     attributes:
       value: |
         **If files were deleted that you did not expect, check the Trash first** —
-        Sweep only ever moves files there (Docker objects are the documented
+        Cruft only ever moves files there (Docker objects are the documented
         exception). Restoring from the Trash is usually the fastest fix.
 
   - type: textarea
     id: what-happened
     attributes:
       label: What happened
-      description: What did Sweep do, and what did you expect instead?
+      description: What did Cruft do, and what did you expect instead?
       placeholder: |
         I selected … and clicked … . I expected … but …
     validations:
@@ -48,7 +48,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Sweep version
+      label: Cruft version
       description: From the release you downloaded, or the commit you built.
       placeholder: "v0.1.0"
     validations:
@@ -69,7 +69,7 @@ body:
     attributes:
       label: Permissions
       options:
-        - label: Sweep has Full Disk Access (System Settings → Privacy & Security)
+        - label: Cruft has Full Disk Access (System Settings → Privacy & Security)
         - label: Docker was running when I scanned
 
   - type: textarea

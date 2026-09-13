@@ -1,4 +1,4 @@
-# Sweep — Storage cleaner for every kind of Mac user
+# Cruft — Storage cleaner for every kind of Mac user
 
 ## 1. Product concept
 
@@ -24,9 +24,9 @@ video editor is never asked about DerivedData and a developer is never shown
 their Movies folder.
 
 The exact membership of each profile lives in `Catalog.roles` in
-[`Sources/SweepCore/Catalog.swift`](../Sources/SweepCore/Catalog.swift) and is
+[`Sources/CruftCore/Catalog.swift`](../Sources/CruftCore/Catalog.swift) and is
 deliberately not duplicated here: a hand-maintained copy of it went stale within
-two releases. `SweepChecks` asserts every referenced category exists and that
+two releases. `CruftChecks` asserts every referenced category exists and that
 every role has at least one `safe` category.
 
 ## 3. Categories & risk model
@@ -61,7 +61,7 @@ Detecting them is not what the documentation suggests. With "Desktop & Documents
 Folders" enabled, `~/Desktop` is a firmlink to the real iCloud location, and
 `isUbiquitousItemKey` / `ubiquitousItemDownloadingStatusKey` both report nil for
 that path — only `~/Library/Mobile Documents/com~apple~CloudDocs/Desktop`
-answers true (verified on macOS 26). Sweep therefore also treats
+answers true (verified on macOS 26). Cruft therefore also treats
 `~/Desktop`/`~/Documents` as cloud-managed when the matching folder exists under
 `com~apple~CloudDocs`, which iCloud creates exactly when that sync is on.
 
@@ -109,7 +109,7 @@ size is a claim about one file, not a promise about free space.
 
 At least one popular open-source cleaner deletes `History`, `Cookies` and
 `Web Data` from a browser profile under the heading of clearing its cache. That
-is browsing history and login state, not cache. Nothing in Sweep may point at a
+is browsing history and login state, not cache. Nothing in Cruft may point at a
 path like that: if cleaning it would log the user out or lose their history, it
 is not a cache, whatever folder it lives in.
 
@@ -183,10 +183,10 @@ is not a cache, whatever folder it lives in.
 ## 6. Architecture — Clean Architecture, 3 targets
 
 ```
-SweepCore   (domain: entities, ports, use cases, catalog — Foundation only)
-SweepInfra  (adapters: file-system scanners, trash service — depends on SweepCore)
-SweepApp    (SwiftUI + MVVM view models — depends on Core + Infra; DI at composition root)
-Tests/SweepCoreTests (Swift Testing)
+CruftCore   (domain: entities, ports, use cases, catalog — Foundation only)
+CruftInfra  (adapters: file-system scanners, trash service — depends on CruftCore)
+CruftApp    (SwiftUI + MVVM view models — depends on Core + Infra; DI at composition root)
+Tests/CruftCoreTests (Swift Testing)
 ```
 
 Dependency rule: inward only. UI knows use cases, never FileManager. Scanners are

@@ -146,7 +146,7 @@ Command Line Tools are enough; Xcode is only needed for `swift test`.
 
 ```sh
 git clone https://github.com/akatekhanh/cruft.git
-cd sweep
+cd cruft
 swift run CruftApp          # run it
 swift run CruftChecks       # the full check suite (no Xcode needed)
 swift test                  # same assertions via Swift Testing (needs Xcode)

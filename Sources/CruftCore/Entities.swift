@@ -16,6 +16,27 @@ public enum RiskLevel: Int, Codable, CaseIterable, Comparable, Sendable {
         case .risky: return "Risky — check carefully"
         }
     }
+
+    /// Short label for tab/segment controls where space is tight.
+    public var shortLabel: String {
+        switch self {
+        case .safe: return "Safe"
+        case .review: return "Worth a look"
+        case .risky: return "Risky"
+        }
+    }
+
+    /// One sentence telling the user what cleaning this whole level costs them.
+    public var explanation: String {
+        switch self {
+        case .safe:
+            return "Regenerated automatically. Cleaning these loses nothing."
+        case .review:
+            return "Safe, but something will need to re-download, rebuild or sign in again."
+        case .risky:
+            return "Real data may be lost. Read each item before you tick it."
+        }
+    }
 }
 
 /// How items of a category leave the machine when cleaned.

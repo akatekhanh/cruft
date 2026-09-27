@@ -30,6 +30,10 @@ and a directory of Docker layers — none of which a cache cleaner looks at.
 
 <img src="docs/screenshots/results-light.png" alt="Cruft results screen: sidebar of categories, items grouped by risk level, quick clean banner">
 
+Each risk tier also has its own tab, so you can review one confidence level at a time:
+
+<img src="docs/screenshots/results-review-light.png" alt="Cruft results screen filtered to the Worth a look tier, with a header explaining the tier and a Select all button">
+
 ## What makes it different
 
 There are good open-source Mac cleaners now — several appeared in 2025–2026, and

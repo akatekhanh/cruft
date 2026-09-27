@@ -6,8 +6,8 @@ public enum Catalog {
     public static let categories: [CleanCategory] = [
         .init(id: "trash", name: "Trash",
               detail: "Files you already threw away.",
-              consequence: "Frees the space for good. Items can no longer be restored.",
-              risk: .safe, systemImage: "trash"),
+              consequence: "Deleted for good — these are already in the Trash, so there is nowhere left to restore from.",
+              risk: .safe, systemImage: "trash", removal: .external),
         .init(id: "logs", name: "Log files",
               detail: "Diagnostic text files apps write while running.",
               consequence: "Nothing changes for you. Apps write new logs as needed.",

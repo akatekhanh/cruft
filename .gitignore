@@ -11,3 +11,6 @@ dist/
 # macOS repo. Kept out of git deliberately, not deleted.
 desktop/
 docs/CROSS-PLATFORM.md
+
+# Reference material copied from other projects for study only; not ours to publish.
+.research/

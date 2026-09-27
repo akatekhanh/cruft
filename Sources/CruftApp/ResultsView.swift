@@ -89,16 +89,24 @@ private struct DetailList: View {
 
     var body: some View {
         List {
-            riskSection(.safe)
-            riskSection(.review)
-            riskySection
+            if let risk = model.riskFilter {
+                levelSection(risk)
+            } else {
+                riskSection(.safe)
+                riskSection(.review)
+                riskySection
+            }
         }
         .listStyle(.inset)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            RiskTabBar(model: model, results: visibleResults)
+        }
         .navigationTitle(model.selectedCategoryID.flatMap { id in
             model.results.first { $0.category.id == id }?.category.name
         } ?? "All results")
     }
 
+    /// "All" tab: every level, grouped and labelled, safest first.
     @ViewBuilder
     private func riskSection(_ risk: RiskLevel) -> some View {
         let rows = items(risk: risk)
@@ -128,6 +136,113 @@ private struct DetailList: View {
                 RiskBadge(risk: .risky)
             }
         }
+    }
+
+    /// Single-level tab: one flat list under a header that explains the level
+    /// and offers to tick or untick the whole tier at once. The user asked for
+    /// this tier explicitly, so risky items are not folded away here.
+    @ViewBuilder
+    private func levelSection(_ risk: RiskLevel) -> some View {
+        let rows = items(risk: risk)
+        Section {
+            if rows.isEmpty {
+                Text("Nothing at this level.")
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 8)
+            } else {
+                ForEach(rows) { item in
+                    ItemRow(model: model, item: item, category: categoryFor(item))
+                }
+            }
+        } header: {
+            LevelHeader(model: model, risk: risk, rows: rows, results: visibleResults)
+        }
+    }
+}
+
+/// Segmented sub-tabs: All, then one per risk level, each with its item count.
+/// Keeps the three colours apart so a tier can be reviewed on its own.
+private struct RiskTabBar: View {
+    var model: AppModel
+    let results: [CategoryScanResult]
+
+    private func count(_ risk: RiskLevel) -> Int {
+        results.flatMap(\.items).filter { $0.risk == risk }.count
+    }
+
+    var body: some View {
+        Picker("Risk level", selection: Binding(
+            get: { model.riskFilter },
+            set: { model.riskFilter = $0 }
+        )) {
+            Text("All").tag(RiskLevel?.none)
+            ForEach(RiskLevel.allCases, id: \.self) { risk in
+                Text("\(risk.shortLabel) · \(count(risk))")
+                    .tag(RiskLevel?.some(risk))
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(.bar)
+        .overlay(alignment: .bottom) { Divider() }
+    }
+}
+
+/// Header for a single-level tab: dot, label, what cleaning the tier costs,
+/// totals, and a select-all / deselect-all toggle scoped to that tier.
+private struct LevelHeader: View {
+    var model: AppModel
+    let risk: RiskLevel
+    let rows: [ScanItem]
+    let results: [CategoryScanResult]
+
+    /// Items the bulk button may tick. Permanent removals and iCloud files are
+    /// left out on purpose — see `SelectionPolicy.isBulkSelectable`.
+    private var bulkRows: [ScanItem] { rows.filter(SelectionPolicy.isBulkSelectable) }
+    private var oneByOneCount: Int { rows.count - bulkRows.count }
+
+    private var allSelected: Bool {
+        !bulkRows.isEmpty && bulkRows.allSatisfy { model.selection.contains($0.id) }
+    }
+
+    /// No bulk button on the Risky tier: its own copy says to read each item.
+    private var offersBulkSelect: Bool { risk != .risky && !bulkRows.isEmpty }
+
+    var body: some View {
+        let bytes = rows.reduce(0) { $0 + $1.sizeBytes }
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    RiskBadge(risk: risk)
+                    Text("· \(rows.count) items · \(ByteText.string(bytes))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+                Text(risk.explanation)
+                    .font(.caption)
+                    .foregroundStyle(risk == .risky ? Theme.color(for: .risky) : .secondary)
+                    .textCase(nil)
+                if offersBulkSelect, oneByOneCount > 0 {
+                    Text("\(oneByOneCount) of these are permanent or synced by iCloud — tick those one by one.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .textCase(nil)
+                }
+            }
+            Spacer()
+            if offersBulkSelect {
+                Button(allSelected ? "Deselect all" : "Select all") {
+                    model.setSelection(for: risk, select: !allSelected, in: results)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(model.isCleaning)
+            }
+        }
+        .padding(.vertical, 4)
     }
 }
 
@@ -265,7 +380,7 @@ private struct FooterBar: View {
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
                 if model.selectionHasExternalRemoval {
-                    Text("Docker items are removed by Docker itself — they do not go to the Trash.")
+                    Text("Some selected items are removed permanently — they do not go to the Trash.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

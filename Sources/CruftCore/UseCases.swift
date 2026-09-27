@@ -26,11 +26,15 @@ public struct ScanUseCase: Sendable {
         let active = scanners(for: role)
         var results: [CategoryScanResult] = []
         var bytes: Int64 = 0
+        // A path belongs to the first category (in role order) that reports it.
+        // Two categories listing the same folder would double the totals, give
+        // SwiftUI duplicate row ids, and fail the second removal.
+        var seen = Set<String>()
         for (i, scanner) in active.enumerated() {
             onProgress(ScanProgress(finished: i, total: active.count,
                                     currentCategoryName: scanner.category.name,
                                     bytesFoundSoFar: bytes))
-            let items = await scanner.scan()
+            let items = await scanner.scan().filter { seen.insert($0.id).inserted }
             let result = CategoryScanResult(category: scanner.category, items: items)
             bytes += result.totalBytes
             if !items.isEmpty { results.append(result) }
@@ -88,6 +92,15 @@ public enum SelectionPolicy {
                                      selection: Set<String>) -> Int64 {
         results.flatMap(\.items).filter { selection.contains($0.id) }
             .reduce(0) { $0 + $1.sizeBytes }
+    }
+
+    /// Whether an item may be ticked by a bulk action ("Select all" on a tier).
+    /// Same guards as the quick clean minus the risk level: a bulk tick must
+    /// never include something with no undo (permanent removal) or something
+    /// whose deletion reaches other devices (iCloud). Those stay one-by-one.
+    public static func isBulkSelectable(_ item: ScanItem) -> Bool {
+        !item.isCloudManaged
+            && (Catalog.category(item.categoryID)?.removal ?? .trash) == .trash
     }
 
     /// The one-click quick clean: Safe risk, recoverable (goes to Trash), and

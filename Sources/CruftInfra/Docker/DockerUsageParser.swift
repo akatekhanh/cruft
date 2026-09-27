@@ -57,28 +57,39 @@ public enum DockerUsageParser {
         var out: [String: [ScanItem]] = [:]
 
         // Images: dangling (untagged) are safe; tagged-but-unused need a look.
+        // `df -v` prints one line per tag, so an image with several tags is
+        // grouped by ID: one row, one removal, its tags listed in the name.
+        // UniqueSize is what deleting the image is guaranteed to free; Size
+        // also counts layers shared with other images and would overstate it.
+        var tagsByID: [String: [String]] = [:]
+        var sizeByID: [String: Int64] = [:]
+        var order: [String] = []
         for image in dicts(root["Images"]) {
             let repo = str(image["Repository"])
             let tag = str(image["Tag"])
             let id = str(image["ID"])
             let containers = int(image["Containers"])
             guard containers == 0, !id.isEmpty else { continue }
-            let dangling = repo.isEmpty || repo == "<none>"
-            // UniqueSize is what deleting this image is guaranteed to free;
-            // Size also counts layers shared with other images.
-            let size = max(parseSize(str(image["UniqueSize"])), dangling ? parseSize(str(image["Size"])) : 0)
-            let displaySize = size > 0 ? size : parseSize(str(image["Size"]))
-            guard displaySize > 0 else { continue }
-            if dangling {
+            let unique = parseSize(str(image["UniqueSize"]))
+            let size = unique > 0 ? unique : parseSize(str(image["Size"]))
+            if tagsByID[id] == nil { order.append(id); tagsByID[id] = [] }
+            sizeByID[id] = max(sizeByID[id] ?? 0, size)
+            if !repo.isEmpty, repo != "<none>" {
+                tagsByID[id]?.append(tag.isEmpty || tag == "<none>" ? repo : "\(repo):\(tag)")
+            }
+        }
+        for id in order {
+            guard let size = sizeByID[id], size > 0 else { continue }
+            let tags = tagsByID[id] ?? []
+            if tags.isEmpty {
                 append(&out, danglingImagesCategoryID, item(
                     kind: "image", ref: id,
                     name: "Untagged image \(String(id.prefix(12)))",
-                    size: displaySize, categoryID: danglingImagesCategoryID))
+                    size: size, categoryID: danglingImagesCategoryID))
             } else {
-                let ref = tag.isEmpty || tag == "<none>" ? id : "\(repo):\(tag)"
                 append(&out, unusedImagesCategoryID, item(
-                    kind: "image", ref: ref, name: ref,
-                    size: displaySize, categoryID: unusedImagesCategoryID))
+                    kind: "image", ref: id, name: tags.joined(separator: ", "),
+                    size: size, categoryID: unusedImagesCategoryID))
             }
         }
 

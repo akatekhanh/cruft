@@ -61,6 +61,26 @@ public struct CLIVersionsScanner: CategoryScanner, Sendable {
         return relative.split(separator: "/").first.map(String.init)
     }
 
+    /// Version-aware "is `a` newer than `b`": numeric components compare as
+    /// numbers ("2.1.266" > "2.1.9"), anything else falls back to text. A
+    /// directory that sorts *newer* than the active one is a staged release the
+    /// tool has downloaded but not switched to yet — deleting it would undo the
+    /// pending update, so it is never offered.
+    public static func isNewer(_ a: String, than b: String) -> Bool {
+        func parts(_ s: String) -> [String] {
+            s.split(whereSeparator: { $0 == "." || $0 == "-" || $0 == "+" }).map(String.init)
+        }
+        let pa = parts(a), pb = parts(b)
+        for i in 0..<max(pa.count, pb.count) {
+            let x = i < pa.count ? pa[i] : "0"
+            let y = i < pb.count ? pb[i] : "0"
+            if x == y { continue }
+            if let nx = Int(x), let ny = Int(y) { return nx > ny }
+            return x > y
+        }
+        return false
+    }
+
     public func scan() async -> [ScanItem] {
         FSHelpers.safely {
             let fm = FileManager.default
@@ -80,6 +100,7 @@ public struct CLIVersionsScanner: CategoryScanner, Sendable {
                 for child in children {
                     let name = child.lastPathComponent
                     if name.hasPrefix(".") || name == active { continue }
+                    if Self.isNewer(name, than: active) { continue }
                     let size = FSHelpers.sizeOf(child)
                     if size <= 0 { continue }
                     items.append(ScanItem(

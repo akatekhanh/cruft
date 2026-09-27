@@ -15,7 +15,7 @@ public enum CruftInfraFactory {
 
     /// Cleaners for categories whose items are not files (routed before Trash).
     public static func makeSpecialCleaners() -> [SpecialCleaner] {
-        [DockerCleaner()]
+        [DockerCleaner(inventory: dockerInventory), PermanentDeleteCleaner()]
     }
 
     private static func makeScanner(for category: CleanCategory) -> CategoryScanner {
@@ -24,16 +24,24 @@ public enum CruftInfraFactory {
             return DirectoryChildrenScanner(category: category, roots: ["~/.Trash"])
 
         case "logs":
-            return DirectoryChildrenScanner(category: category, roots: ["~/Library/Logs"])
+            // JetBrains logs are listed under editor-caches.
+            return DirectoryChildrenScanner(category: category, roots: ["~/Library/Logs"],
+                                            excludedChildNameContains: ["JetBrains"])
 
         case "user-caches":
             return DirectoryChildrenScanner(
                 category: category,
                 roots: ["~/Library/Caches"],
+                // Every ~/Library/Caches child that another category already
+                // reports, so the same folder never appears twice.
                 excludedChildNameContains: [
                     "Homebrew", "pip", "Yarn", "CocoaPods", "Google", "Firefox",
                     "Microsoft Edge", "com.apple.Safari", "com.bohemiancoding.sketch3",
                     "com.figma.Desktop", "com.apple.FontRegistry",
+                    "go-build", "uv", "pypoetry", "JetBrains",
+                    "us.zoom.xos", "com.microsoft.teams2",
+                    "BraveSoftware", "company.thebrowser.Browser",
+                    "com.operasoftware.Opera", "com.vivaldi.Vivaldi", "Chromium",
                 ]
             )
 

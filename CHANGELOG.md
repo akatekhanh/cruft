@@ -6,7 +6,52 @@ Per-release details are also generated from merged pull requests on the
 
 ## [Unreleased]
 
+### Added
+- **Risk sub-tabs on the results screen.** Safe, Worth a look and Risky were
+  stacked in one scrolling list, so the three colours mixed and a tier could not
+  be reviewed on its own. A segmented control now offers **All** (grouped, as
+  before) plus one tab per tier with its item count. A tier tab shows a header
+  that spells out what cleaning that tier costs, totals, and a **Select all**
+  for Safe and Worth a look. Select all skips items that a bulk tick should never
+  reach — permanent removals (Docker, the Trash itself) and iCloud-synced files —
+  and says how many were skipped; the Risky tier offers no bulk button at all.
+
 ### Fixed
+- **Cleaning the Trash now actually frees space.** Items in `~/.Trash` were
+  "cleaned" by moving them to the Trash, which macOS treats as a no-op that
+  reports success: nothing was deleted, the Done screen claimed the bytes, and a
+  rescan listed the same items. The category is now a permanent removal with its
+  own cleaner, refuses anything outside `~/.Trash`, and stays out of Quick clean
+  and the default selection like every other removal with no undo.
+- **The same folder no longer appears under two categories.** Go, uv, Poetry,
+  JetBrains, Zoom, Teams and several browser caches were listed both by their
+  own category and by App caches, doubling totals and giving SwiftUI duplicate
+  row ids. The exclusion list is complete again, and the scan now assigns every
+  path to the first category that reports it, so no future category can
+  reintroduce the problem.
+- **Leftovers from deleted apps re-check what is installed on every scan.** The
+  installed-apps index was built once, on the main thread, at launch; an app
+  installed or launched afterwards was reported as gone on the next rescan. The
+  index is now rebuilt inside the scan, off the main actor.
+- **Old CLI tool versions never offers a staged update.** A release the tool has
+  already downloaded but not switched to sorts newer than the active one; it was
+  listed as safe cruft, and deleting it would have undone the pending update.
+  Versions newer than the launcher's target are now skipped.
+- **Docker results reflect what was just removed.** The inventory cache is
+  dropped after every removal, so a rescan within its 15-second window no longer
+  lists the deleted object and then fails to remove it a second time.
+- **Docker image sizes are honest.** Untagged images were sized with shared
+  layers included; an image carrying several tags was listed once per tag and
+  removed by a single tag, which only untags. Images are now grouped by ID, sized
+  by their unique bytes, and removed with all tags.
+- **A chatty Docker daemon can no longer stall the scan.** stdout and stderr were
+  drained one after the other; more than 64 KB of warnings on stderr blocked the
+  read until the two-minute watchdog fired. Both pipes are read concurrently.
+- **Old downloads considers when a file was last opened,** not only when it was
+  last modified, so a PDF downloaded months ago and read yesterday is not
+  offered.
+- The scan progress bar can no longer step backwards when two categories finish
+  back to back.
 - **"Other" no longer swallows the disk.** The Overview measured five slices and
   left 145 GB of 189 GB used in a wedge labelled "Other" — the same thing macOS's
   own storage screen does, and just as useless. Two new slices account for most

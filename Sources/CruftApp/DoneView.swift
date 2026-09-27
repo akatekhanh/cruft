@@ -21,8 +21,8 @@ struct DoneView: View {
                         .font(.title2.weight(.semibold))
                     let trashed = report.freedBytes - report.externallyRemovedBytes
                     Text(trashed > 0
-                         ? "\(ByteText.string(trashed)) went to the Trash (restorable). \(ByteText.string(report.externallyRemovedBytes)) was removed by Docker and cannot be restored."
-                         : "Removed by Docker — these items cannot be restored.")
+                         ? "\(ByteText.string(trashed)) went to the Trash (restorable). \(ByteText.string(report.externallyRemovedBytes)) was removed permanently and cannot be restored."
+                         : "Removed permanently — these items cannot be restored.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)

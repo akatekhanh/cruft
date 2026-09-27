@@ -25,7 +25,10 @@ public struct OrphanedAppDataScanner: CategoryScanner, Sendable {
     public let category: CleanCategory
     private let roots: [String]
     private let minBytes: Int64
-    private let index: InstalledAppsIndex
+    /// Injected for tests only. In production the index is rebuilt on every
+    /// scan (inside `scan()`, off the main actor), because an app installed or
+    /// launched after Cruft started must not be reported as gone.
+    private let fixedIndex: InstalledAppsIndex?
 
     /// Bundle ids that routinely exist without an installed `.app`: CLI tools,
     /// updaters, and frameworks that write to `~/Library` on their own. Matched
@@ -68,7 +71,7 @@ public struct OrphanedAppDataScanner: CategoryScanner, Sendable {
         self.category = category
         self.roots = roots
         self.minBytes = minBytes
-        self.index = index ?? InstalledAppsIndex.current()
+        self.fixedIndex = index
     }
 
     /// A name macOS would only produce from a bundle identifier: at least two
@@ -101,7 +104,8 @@ public struct OrphanedAppDataScanner: CategoryScanner, Sendable {
     }
 
     public func scan() async -> [ScanItem] {
-        FSHelpers.safely {
+        let index = fixedIndex ?? InstalledAppsIndex.current()
+        return FSHelpers.safely {
             let fm = FileManager.default
             var items: [ScanItem] = []
             var seen = Set<String>()

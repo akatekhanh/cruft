@@ -5,8 +5,13 @@ import CruftCore
 /// scan run (it's the expensive part — Docker walks container filesystems).
 /// Results are cached briefly so five categories cost one CLI call, while a
 /// user-triggered rescan after the TTL still sees fresh data.
-public actor DockerInventory {
+///
+/// A plain lock rather than an actor so `DockerCleaner.clean` — which is
+/// synchronous — can drop the cache the moment it removes something; otherwise
+/// a rescan inside the TTL would list objects that no longer exist.
+public final class DockerInventory: @unchecked Sendable {
     private let ttl: TimeInterval
+    private let lock = NSLock()
     private var fetchedAt: Date?
     private var reachable = false
     private var byCategory: [String: [ScanItem]] = [:]
@@ -14,13 +19,22 @@ public actor DockerInventory {
     public init(ttl: TimeInterval = 15) { self.ttl = ttl }
 
     public func items(for categoryID: String) -> [ScanItem] {
-        refreshIfStale()
-        return byCategory[categoryID] ?? []
+        lock.withLock {
+            refreshIfStale()
+            return byCategory[categoryID] ?? []
+        }
     }
 
     public func isDaemonReachable() -> Bool {
-        refreshIfStale()
-        return reachable
+        lock.withLock {
+            refreshIfStale()
+            return reachable
+        }
+    }
+
+    /// Forget the cached inventory so the next query asks Docker again.
+    public func invalidate() {
+        lock.withLock { fetchedAt = nil }
     }
 
     private func refreshIfStale() {
@@ -48,7 +62,7 @@ public struct DockerObjectScanner: CategoryScanner, Sendable {
     }
 
     public func scan() async -> [ScanItem] {
-        await inventory.items(for: category.id)
+        inventory.items(for: category.id)
     }
 }
 
@@ -71,7 +85,7 @@ public struct DockerDiskFallbackScanner: CategoryScanner, Sendable {
     }
 
     public func scan() async -> [ScanItem] {
-        if await inventory.isDaemonReachable() { return [] }
+        if inventory.isDaemonReachable() { return [] }
         return await wholeDisk.scan()
     }
 }
@@ -80,13 +94,17 @@ public struct DockerDiskFallbackScanner: CategoryScanner, Sendable {
 /// the granular ones — the whole-disk fallback stays a normal file (trashable).
 public struct DockerCleaner: SpecialCleaner, Sendable {
     public var categoryIDs: Set<String> { Set(DockerUsageParser.categoryIDs) }
+    /// The inventory the scanners read from; dropped after every removal so a
+    /// rescan cannot show what was just deleted.
+    private let inventory: DockerInventory?
 
-    public init() {}
+    public init(inventory: DockerInventory? = nil) { self.inventory = inventory }
 
     public func clean(_ item: ScanItem) throws {
         guard let cli = DockerCLI() else {
             throw DockerCLI.CommandError(message: "docker CLI not found")
         }
+        defer { inventory?.invalidate() }
         // docker://local/<kind>/<ref> — ref may itself contain slashes (registry paths).
         let comps = item.url.pathComponents
         guard comps.count >= 3 else {

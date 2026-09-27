@@ -41,6 +41,9 @@ final class AppModel {
     var selection: Set<String> = []
     /// nil means "All results" is selected in the sidebar.
     var selectedCategoryID: String?
+    /// Risk sub-tab in the detail pane. nil shows every level grouped; a value
+    /// shows that level alone so the user can review one confidence tier at a time.
+    var riskFilter: RiskLevel?
     var diskStats = DiskStats()
     var isCleaning = false
 
@@ -169,6 +172,7 @@ final class AppModel {
         results = []
         selection = []
         selectedCategoryID = nil
+        riskFilter = nil
         if wasReviewing { startScan() }
     }
 
@@ -179,7 +183,10 @@ final class AppModel {
         Task {
             let scanResults = await scanUseCase.run(for: currentRole) { progress in
                 Task { @MainActor in
-                    if case .scanning = self.phase {
+                    // Each update hops to the main actor in its own Task, so two
+                    // can land out of order; never let the bar step backwards.
+                    if case .scanning(let current) = self.phase,
+                       progress.finished >= current.finished {
                         self.phase = .scanning(progress)
                     }
                 }
@@ -187,6 +194,7 @@ final class AppModel {
             self.results = scanResults
             self.selection = SelectionPolicy.defaultSelection(in: scanResults)
             self.selectedCategoryID = nil
+            self.riskFilter = nil
             self.phase = .results
         }
     }
@@ -212,12 +220,14 @@ final class AppModel {
         }
     }
 
-    /// Select or deselect every item of a given risk level across all visible categories.
+    /// Select or deselect every item of a given risk level across the given
+    /// categories. Selecting skips items that `SelectionPolicy.isBulkSelectable`
+    /// rejects (permanent removals, iCloud files); deselecting clears them all.
     func setSelection(for risk: RiskLevel, select: Bool, in categories: [CategoryScanResult]) {
         for result in categories {
             for item in result.items where item.risk == risk {
                 if select {
-                    selection.insert(item.id)
+                    if SelectionPolicy.isBulkSelectable(item) { selection.insert(item.id) }
                 } else {
                     selection.remove(item.id)
                 }
@@ -281,6 +291,7 @@ final class AppModel {
         results = []
         selection = []
         selectedCategoryID = nil
+        riskFilter = nil
         refreshDiskStats()
         phase = .idle
     }
@@ -289,6 +300,7 @@ final class AppModel {
         results = []
         selection = []
         selectedCategoryID = nil
+        riskFilter = nil
         startScan()
     }
 }

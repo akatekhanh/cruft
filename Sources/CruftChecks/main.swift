@@ -442,8 +442,12 @@ do {
                                        launcher: launcher.path)
     let found = await CLIVersionsScanner(
         category: cat("cli-old-versions", .safe), tools: [tool]).scan()
-    expect(Set(found.map(\.displayName)) == ["Tool 1.0.0", "Tool 1.0.2"],
-           "lists every version except the running one, got \(found.map(\.displayName))")
+    expect(Set(found.map(\.displayName)) == ["Tool 1.0.0"],
+           "lists only versions older than the running one — the staged 1.0.2 is a pending update, got \(found.map(\.displayName))")
+    expect(CLIVersionsScanner.isNewer("2.1.266", than: "2.1.9")
+           && !CLIVersionsScanner.isNewer("2.1.9", than: "2.1.266")
+           && !CLIVersionsScanner.isNewer("1.0.1", than: "1.0.1"),
+           "version comparison is numeric per component")
 
     // Fail closed: with no launcher there is no way to know what is live, so
     // nothing may be offered.

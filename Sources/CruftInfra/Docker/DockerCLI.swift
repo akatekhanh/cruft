@@ -27,6 +27,10 @@ public struct DockerCLI: Sendable {
         self.binaryPath = found
     }
 
+    /// Mutable holder handed to the background reader; the DispatchGroup wait
+    /// is the synchronisation point.
+    private final class DataBox: @unchecked Sendable { var data = Data() }
+
     public struct CommandError: LocalizedError {
         public let message: String
         public var errorDescription: String? { message }
@@ -48,9 +52,19 @@ public struct DockerCLI: Sendable {
 
         let killer = DispatchWorkItem { if process.isRunning { process.terminate() } }
         DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: killer)
-        // Drain pipes before waiting — a full pipe buffer deadlocks waitUntilExit.
+        // Drain both pipes, concurrently, before waiting: a child that fills
+        // one pipe's buffer (~64 KB) while we block reading the other would
+        // hang until the watchdog kills it.
+        let errBox = DataBox()
+        let group = DispatchGroup()
+        group.enter()
+        DispatchQueue.global().async {
+            errBox.data = stderr.fileHandleForReading.readDataToEndOfFile()
+            group.leave()
+        }
         let outData = stdout.fileHandleForReading.readDataToEndOfFile()
-        let errData = stderr.fileHandleForReading.readDataToEndOfFile()
+        group.wait()
+        let errData = errBox.data
         process.waitUntilExit()
         killer.cancel()
 
@@ -74,7 +88,21 @@ public struct DockerCLI: Sendable {
         try run(["system", "df", "-v", "--format", "{{json .}}"], timeout: 120)
     }
 
-    public func removeImage(_ ref: String) throws { try run(["rmi", ref]) }
+    /// Removes an image and all of its tags. `docker rmi <id>` refuses an image
+    /// referenced by several tags, so in that case untag each one — the last
+    /// untag deletes the layers, which is the only way the bytes are freed.
+    public func removeImage(_ ref: String) throws {
+        do {
+            try run(["rmi", ref])
+        } catch let error as CommandError
+            where error.message.contains("multiple repositories") {
+            let tags = try run(["image", "inspect", ref,
+                                "--format", "{{join .RepoTags \"\\n\"}}"])
+                .split(separator: "\n").map(String.init).filter { !$0.isEmpty }
+            guard !tags.isEmpty else { throw error }
+            for tag in tags { try run(["rmi", tag]) }
+        }
+    }
     public func removeContainer(_ id: String) throws { try run(["rm", id]) }
     public func removeVolume(_ name: String) throws { try run(["volume", "rm", name]) }
     public func pruneBuildCache() throws { try run(["builder", "prune", "-f"], timeout: 300) }

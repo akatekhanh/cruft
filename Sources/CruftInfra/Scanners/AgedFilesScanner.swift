@@ -1,8 +1,10 @@
 import Foundation
 import CruftCore
 
-/// Top-level entries of `root` whose content modification date is older than
-/// `olderThanDays`. Folders count via their recursive size.
+/// Top-level entries of `root` that nothing has touched — neither written nor
+/// *read* — for `olderThanDays`. A file downloaded months ago but opened
+/// yesterday is in use, whatever its modification date says. Folders count
+/// via their recursive size.
 public struct AgedFilesScanner: CategoryScanner, Sendable {
     public let category: CleanCategory
     public let root: String
@@ -31,7 +33,10 @@ public struct AgedFilesScanner: CategoryScanner, Sendable {
             for child in children {
                 let name = child.lastPathComponent
                 if name.hasPrefix(".") { continue }
-                guard let modified = FSHelpers.lastModified(of: child), modified < cutoff else { continue }
+                let modified = FSHelpers.lastModified(of: child)
+                let accessed = FSHelpers.lastAccessed(of: child)
+                guard let lastUse = [modified, accessed].compactMap({ $0 }).max(),
+                      lastUse < cutoff else { continue }
                 let size = FSHelpers.sizeOf(child)
                 if size <= 0 { continue }
                 items.append(ScanItem(
@@ -41,6 +46,7 @@ public struct AgedFilesScanner: CategoryScanner, Sendable {
                     categoryID: category.id,
                     risk: category.risk,
                     lastModified: modified,
+                    lastAccessed: accessed,
                     isCloudManaged: FSHelpers.isCloudManaged(child)
                 ))
             }

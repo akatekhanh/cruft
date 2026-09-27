@@ -32,7 +32,15 @@ enum SnapshotRunner {
             snap(chrome(model, DashboardView(model: model)), "dashboard-\(scheme.0)", dir, scheme.1)
             model.selectedTab = Catalog.smartRole.id
             model.role = Catalog.smartRole
+            model.riskFilter = nil
             snap(chrome(model, ResultsView(model: model)), "results-\(scheme.0)", dir, scheme.1)
+            // One shot per risk sub-tab: the point of the tabs is that each tier
+            // can be reviewed alone, so the README should show one alone.
+            model.riskFilter = .review
+            snap(chrome(model, ResultsView(model: model)), "results-review-\(scheme.0)", dir, scheme.1)
+            model.riskFilter = .risky
+            snap(chrome(model, ResultsView(model: model)), "results-risky-\(scheme.0)", dir, scheme.1)
+            model.riskFilter = nil
             snap(DoneView(model: model,
                           report: CleanReport(freedBytes: 3_460_000_000, cleanedCount: 42,
                                               failures: [])),

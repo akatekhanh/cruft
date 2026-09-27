@@ -55,3 +55,18 @@ jobs:
             Some categories (Safari cache, Mail attachments) need **Full Disk
             Access** in System Settings → Privacy & Security. Without it they
             simply show as empty.
+
+      # Tell the Homebrew tap a new release exists so it updates the cask right
+      # away. Needs a fine-grained PAT with contents:write on
+      # akatekhanh/homebrew-tap stored as TAP_GITHUB_TOKEN; without it the tap's
+      # own scheduled workflow picks the release up within a few hours instead.
+      - name: Notify Homebrew tap
+        if: env.TAP_GITHUB_TOKEN != ''
+        env:
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        run: |
+          curl -sS -X POST \
+            -H "Authorization: Bearer $TAP_GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/akatekhanh/homebrew-tap/dispatches \
+            -d '{"event_type":"cruft-release","client_payload":{"tag":"${{ github.event.inputs.tag || github.ref_name }}"}}'

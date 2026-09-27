@@ -6,6 +6,8 @@ Per-release details are also generated from merged pull requests on the
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-09-27
+
 ### Added
 - **Risk sub-tabs on the results screen.** Safe, Worth a look and Risky were
   stacked in one scrolling list, so the three colours mixed and a tier could not
@@ -147,5 +149,6 @@ First public release.
 - Pre-selection is Safe **and** recoverable, so nothing without an undo is ever
   ticked for you.
 
-[Unreleased]: https://github.com/akatekhanh/cruft/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/akatekhanh/cruft/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/akatekhanh/cruft/releases/tag/v0.2.0
 [0.1.0]: https://github.com/akatekhanh/cruft/releases/tag/v0.1.0

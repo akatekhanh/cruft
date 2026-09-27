@@ -114,7 +114,13 @@ virtual disk file instead — which does go to the Trash.
 
 ## Install
 
-Download the latest `Cruft-macOS.zip` from
+With [Homebrew](https://brew.sh):
+
+```sh
+brew install --cask akatekhanh/tap/cruft
+```
+
+Or download the latest `Cruft-macOS.zip` from
 [Releases](https://github.com/akatekhanh/cruft/releases), unzip, and drag
 `Cruft.app` to `/Applications`.
 
@@ -129,6 +135,12 @@ flag that Safari/Chrome attached to the download:
 
 ```sh
 xattr -d com.apple.quarantine /Applications/Cruft.app
+```
+
+Homebrew users can skip the prompt at install time instead:
+
+```sh
+brew install --cask --no-quarantine akatekhanh/tap/cruft
 ```
 
 Don't disable Gatekeeper system-wide (`spctl --master-disable`) — that lowers

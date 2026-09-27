@@ -183,10 +183,12 @@ struct LargeFilesScannerTests {
         let dir = try makeTempDir()
         defer { try? FileManager.default.removeItem(at: dir) }
 
+        // The scanner measures *allocated* size, and APFS allocates whole 4 KB
+        // blocks, so the threshold must sit well above one block.
         try writeFile(at: dir.appendingPathComponent("small.bin"), bytes: 100)
-        try writeFile(at: dir.appendingPathComponent("big.bin"), bytes: 1000)
+        try writeFile(at: dir.appendingPathComponent("big.bin"), bytes: 1_000_000)
 
-        let scanner = LargeFilesScanner(category: testCategory(), roots: [dir.path], minBytes: 500)
+        let scanner = LargeFilesScanner(category: testCategory(), roots: [dir.path], minBytes: 500_000)
         let items = await scanner.scan()
 
         #expect(items.count == 1)
@@ -201,17 +203,20 @@ struct LargeFilesScannerTests {
 
         let hidden = dir.appendingPathComponent(".hidden", isDirectory: true)
         try FileManager.default.createDirectory(at: hidden, withIntermediateDirectories: true)
-        try writeFile(at: hidden.appendingPathComponent("big.bin"), bytes: 1000)
+        try writeFile(at: hidden.appendingPathComponent("big.bin"), bytes: 1_000_000)
 
         let visible = dir.appendingPathComponent("visible", isDirectory: true)
         try FileManager.default.createDirectory(at: visible, withIntermediateDirectories: true)
-        try writeFile(at: visible.appendingPathComponent("big.bin"), bytes: 1000)
+        try writeFile(at: visible.appendingPathComponent("big.bin"), bytes: 1_000_000)
 
-        let scanner = LargeFilesScanner(category: testCategory(), roots: [dir.path], minBytes: 500)
+        let scanner = LargeFilesScanner(category: testCategory(), roots: [dir.path], minBytes: 500_000)
         let items = await scanner.scan()
 
         #expect(items.count == 1)
-        #expect(items.first?.url.path == visible.appendingPathComponent("big.bin").path)
+        // The temp dir is reached via the /var → /private/var symlink; compare
+        // resolved paths so the test does not depend on which one the scanner reports.
+        #expect(items.first?.url.resolvingSymlinksInPath().path
+                == visible.appendingPathComponent("big.bin").resolvingSymlinksInPath().path)
     }
 }
 

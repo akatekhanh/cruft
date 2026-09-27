@@ -117,7 +117,9 @@ virtual disk file instead — which does go to the Trash.
 With [Homebrew](https://brew.sh):
 
 ```sh
-brew install --cask akatekhanh/tap/cruft
+brew tap akatekhanh/tap
+brew trust akatekhanh/tap      # Homebrew 7+ asks this once for third-party taps
+brew install --cask cruft
 ```
 
 Or download the latest `Cruft-macOS.zip` from
@@ -135,12 +137,6 @@ flag that Safari/Chrome attached to the download:
 
 ```sh
 xattr -d com.apple.quarantine /Applications/Cruft.app
-```
-
-Homebrew users can skip the prompt at install time instead:
-
-```sh
-brew install --cask --no-quarantine akatekhanh/tap/cruft
 ```
 
 Don't disable Gatekeeper system-wide (`spctl --master-disable`) — that lowers
